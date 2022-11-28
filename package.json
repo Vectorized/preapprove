@@ -1,0 +1,13 @@
+{
+  "name": "preapprove",
+  "license": "MIT",
+  "version": "0.0.1",
+  "description": "On-chain registry for pre-approvals of ERC721 transfers.",
+  "files": [
+    "src/**/*.sol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorized/preapprove.git"
+  }
+}
