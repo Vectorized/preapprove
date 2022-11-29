@@ -93,7 +93,7 @@ contract PreApproveRegistry {
      * @dev Subscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function subscribe(address lister) public {
+    function subscribe(address lister) external {
         _subscriptions[msg.sender].add(lister);
         emit Subscribed(msg.sender, lister);
     }
@@ -102,7 +102,7 @@ contract PreApproveRegistry {
      * @dev Unsubscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function unsubscribe(address lister) public {
+    function unsubscribe(address lister) external {
         _subscriptions[msg.sender].remove(lister);
         emit Unsubscribed(msg.sender, lister);
     }
@@ -112,7 +112,7 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function addOperator(address operator) public {
+    function addOperator(address operator) external {
         unchecked {
             uint256 begins = block.timestamp + START_DELAY;
             _operators[msg.sender].set(operator, begins);
@@ -125,7 +125,7 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function removeOperator(address operator) public {
+    function removeOperator(address operator) external {
         _operators[msg.sender].remove(operator);
         emit OperatorRemoved(msg.sender, operator);
     }
@@ -140,7 +140,7 @@ contract PreApproveRegistry {
      * @param lister    The maintainer of the pre-approve list.
      * @return has Whether the `collector` is subscribed.
      */
-    function hasSubscription(address collector, address lister) public view returns (bool has) {
+    function hasSubscription(address collector, address lister) external view returns (bool has) {
         has = _subscriptions[collector].contains(lister);
     }
 
@@ -149,7 +149,7 @@ contract PreApproveRegistry {
      * @param collector The NFT collector using the registry.
      * @return list The list of listers.
      */
-    function subscriptions(address collector) public view returns (address[] memory list) {
+    function subscriptions(address collector) external view returns (address[] memory list) {
         list = _subscriptions[collector].values();
     }
 
@@ -158,7 +158,7 @@ contract PreApproveRegistry {
      * @param collector The NFT collector using the registry.
      * @return total The length of the list of listers subscribed by `collector`.
      */
-    function totalSubscriptions(address collector) public view returns (uint256 total) {
+    function totalSubscriptions(address collector) external view returns (uint256 total) {
         total = _subscriptions[collector].length();
     }
 
@@ -169,7 +169,7 @@ contract PreApproveRegistry {
      * @return lister The mainter of the pre-approve list.
      */
     function subscriptionAt(address collector, uint256 index)
-        public
+        external
         view
         returns (address lister)
     {
@@ -181,7 +181,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      * @return list  The list of operators.
      */
-    function operators(address lister) public view returns (address[] memory list) {
+    function operators(address lister) external view returns (address[] memory list) {
         bytes32[] memory a = _operators[lister]._inner._keys.values();
         assembly {
             list := a
@@ -193,7 +193,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      * @return total The length of the list of operators.
      */
-    function totalOperators(address lister) public view returns (uint256 total) {
+    function totalOperators(address lister) external view returns (uint256 total) {
         total = _operators[lister].length();
     }
 
@@ -205,7 +205,7 @@ contract PreApproveRegistry {
      *                 collectors subscribed to `lister`.
      */
     function operatorAt(address lister, uint256 index)
-        public
+        external
         view
         returns (address operator, uint256 begins)
     {
@@ -220,29 +220,56 @@ contract PreApproveRegistry {
      *                 collectors subscribed to `lister`.
      * @return begins The Unix timestamp.
      */
-    function startTime(address lister, address operator) public view returns (uint256 begins) {
+    function startTime(address lister, address operator) external view returns (uint256 begins) {
         begins = uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
     }
 
     /**
      * @dev Returns whether the `operator` can manage NFTs on the behalf
      *      of `collector` if `collector` is subscribed to `lister`.
-     * @param collector The NFT collector using the registry.
-     * @param lister The maintainer of the pre-approve list.
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to `lister`.
-     * @return preApproved Whether `operator` is effectively pre-approved.
+     * @param collector The NFT collector using the registry.
+     * @param lister The maintainer of the pre-approve list.
+     * @return Whether `operator` is effectively pre-approved.
      */
     function isPreApproved(address operator, address collector, address lister)
-        public
+        external
         view
-        returns (bool preApproved)
+        returns (bool)
     {
+        /* 
+        Original code:
+
         if (_subscriptions[collector].contains(lister)) {
             uint256 begins = startTime(lister, operator);
-            assembly {
-                preApproved := iszero(or(iszero(begins), lt(timestamp(), begins)))
-            }
+            return begins == 0 ? false : block.timestamp >= begins;
+        }
+
+        Assembly version saves 255 gas.
+
+        We can skip the masking of the addresses. 
+        In case of dirty upper bits, this function will return false,
+        and any NFT contracts using this registry will simply revert back
+        to default behavior (the normal ERC721 approval process).
+        */
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, 1)
+            mstore(returndatasize(), collector)
+            mstore(0x20, add(keccak256(returndatasize(), 0x40), 1))
+            mstore(returndatasize(), lister)
+
+            if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
+
+            mstore(0x20, returndatasize())
+            mstore(returndatasize(), lister)
+            mstore(0x20, add(keccak256(returndatasize(), 0x40), 2))
+            mstore(returndatasize(), operator)
+            let begins := sload(keccak256(returndatasize(), 0x40))
+            mstore(returndatasize(), iszero(or(iszero(begins), lt(timestamp(), begins))))
+            return(returndatasize(), 0x20)
         }
     }
 }

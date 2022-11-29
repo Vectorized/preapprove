@@ -54,6 +54,10 @@ contract PreApproveRegistryTest is TestPlus {
             vm.warp(begins + _random() % 256);
             assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), true);
 
+            uint256 gasBefore = gasleft();
+            registry.isPreApproved(v.operator, v.collector, v.lister);
+            console.log(gasBefore - gasleft());
+
             vm.warp(block.timestamp + _random() % 8);
 
             if (_random() % 2 == 0) {
@@ -62,6 +66,10 @@ contract PreApproveRegistryTest is TestPlus {
                 assertEq(registry.startTime(v.lister, v.operator), 0);
             }
         }
+    }
+
+    function testIsPreApproved2() public {
+        testIsPreApproved(1);
     }
 
     function testOperatorListingGettersAndSetters(uint256) public {
