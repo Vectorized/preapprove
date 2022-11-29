@@ -34,7 +34,7 @@ contract PreApproveRegistryTest is TestPlus {
 
     function testIsPreApproved(uint256) public {
         TestVars memory v = _testVars(1);
-        assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
+        assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
         vm.prank(v.collector);
         registry.subscribe(v.lister);
@@ -42,17 +42,17 @@ contract PreApproveRegistryTest is TestPlus {
         for (uint256 t; t != 2; ++t) {
             vm.prank(v.lister);
             registry.addOperator(v.operator);
-            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
+            assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
             uint256 begins = registry.startTime(v.lister, v.operator);
             vm.warp(begins - 1);
-            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
+            assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
             vm.warp(begins);
-            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), true);
+            assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), true);
 
             vm.warp(begins + _random() % 256);
-            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), true);
+            assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), true);
 
             vm.warp(block.timestamp + _random() % 8);
 
