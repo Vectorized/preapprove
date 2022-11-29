@@ -1,46 +1,83 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+// Imports EnumerableSet and EnumerableMap.
 import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
 
-/// @notice A on-chain registry where `admins` can create lists of pre-approved
-/// `operator`s, and `user`s can subscribe to the pre-approved lists.
-/// When subscribed, NFT contracts that query this registry can allow the operators 
-/// in the subscribed list to do token transfers on behalf of `user`.
+/**
+ * @title PreApproveRegistry
+ * @notice A on-chain registry where listers can create lists 
+ *         of pre-approved operators, which NFT collectors can subscribe to.
+ *         When a collector is subscribed to a list by a lister,
+ *         they can use pre-approved operators to manage their NFTs
+ *         if the NFT contracts consult this registry on whether the operator
+ *         is in the pre-approved list by lister.
+ *
+ *         For safety, newly added operators will need to wait some time
+ *         before they take effect.
+ */
 contract PreApproveRegistry {
     using EnumerableSet for *;
     using EnumerableMap for *;
 
     // =============================================================
-    //                            EVENTS
-    // =============================================================
-
-    event Subscribed(address indexed user, address indexed admin);
-
-    event Unsubscribed(address indexed user, address indexed admin);
-
-    event OperatorAdded(address indexed admin, address indexed operator, uint256 indexed startTime);
-
-    event OperatorRemoved(address indexed admin, address indexed operator);
-
-    // =============================================================
     //                           CONSTANTS
     // =============================================================
 
+    /**
+     * @dev The amount of time before a newly added `operator` becomes effective.
+     */
     uint256 public constant START_DELAY = 86400 * 7;
+
+    // =============================================================
+    //                            EVENTS
+    // =============================================================
+
+    /**
+     * @dev Emitted when `collector` subscribes to `lister`.
+     * @param collector The NFT collector using the registry.
+     * @param lister    The maintainer of the pre-approve list.
+     */
+    event Subscribed(address indexed collector, address indexed lister);
+
+    /**
+     * @dev Emitted when `collector` unsubscribes from `lister`.
+     * @param collector The NFT collector using the registry.
+     * @param lister    The maintainer of the pre-approve list.
+     */
+    event Unsubscribed(address indexed collector, address indexed lister);
+
+    /**
+     * @dev Emitted when `lister` adds `operator` to their pre-approve list.
+     * @param lister    The maintainer of the pre-approve list.
+     * @param operator  The account that can manage NFTs on behalf of 
+     *                  collectors subscribed to `lister`.
+     * @param startTime The Unix timestamp when the `operator` can begin to manage
+     *                  NFTs on on behalf of collectors subscribed to `lister`.
+     */
+    event OperatorAdded(address indexed lister, address indexed operator, uint256 indexed startTime);
+
+    /**
+     * @dev Emitted when `lister` removes `operator` from their pre-approve list.
+     * The `operator` will be immediately removed from the list.
+     * @param lister    The maintainer of the pre-approve list.
+     * @param operator  The account that can manage NFTs on behalf of 
+     *                  collectors subscribed to `lister`.
+     */
+    event OperatorRemoved(address indexed lister, address indexed operator);
 
     // =============================================================
     //                            STORAGE
     // =============================================================
 
     /**
-     * @dev Mapping of `admin` => (`operator` => `startTime`).
+     * @dev Mapping of `lister` => (`operator` => `startTime`).
      * If `startTime` is zero, it is disabled.
      */
     mapping(address => EnumerableMap.AddressToUintMap) internal _operators;
 
     /**
-     * @dev Mapping of `user` => `admin`.
+     * @dev Mapping of `collector` => `lister`.
      */
     mapping(address => EnumerableSet.AddressSet) internal _subscriptions;
 
@@ -49,36 +86,38 @@ contract PreApproveRegistry {
     // =============================================================
 
     /**
-     * @dev Subscribes the caller (user) from `admin`.
-     * @param admin The account that maintains the pre-approval list.
+     * @dev Subscribes the caller (collector) from `lister`.
+     * @param lister The maintainer of the pre-approve list.
      */
-    function subscribe(address admin) public {
-        _subscriptions[msg.sender].add(admin);
-        emit Subscribed(msg.sender, admin);
+    function subscribe(address lister) public {
+        _subscriptions[msg.sender].add(lister);
+        emit Subscribed(msg.sender, lister);
     }
 
     /**
-     * @dev Unsubscribes the caller (user) from `admin`.
-     * @param admin The account that maintains the pre-approval list.
+     * @dev Unsubscribes the caller (collector) from `lister`.
+     * @param lister The maintainer of the pre-approve list.
      */
-    function unsubscribe(address admin) public {
-        _subscriptions[msg.sender].remove(admin);
-        emit Unsubscribed(msg.sender, admin);
+    function unsubscribe(address lister) public {
+        _subscriptions[msg.sender].remove(lister);
+        emit Unsubscribed(msg.sender, lister);
     }
 
     /**
-     * @dev Adds the `operator` to the pre-approval list maintained by the caller (admin).
-     * @param operator The account (can be a contract).
+     * @dev Adds the `operator` to the pre-approve list maintained by the caller (lister).
+     * @param operator The account that can manage NFTs on behalf of 
+     *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) public {
         unchecked {
-            _operators[msg.sender].set(operator, block.timestamp + START_DELAY);    
+            _operators[msg.sender].set(operator, block.timestamp + START_DELAY);
         }
     }
 
     /**
-     * @dev Removes the `operator` from the pre-approval list maintained by the caller (admin).
-     * @param operator The account (can be a contract).
+     * @dev Removes the `operator` from the pre-approve list maintained by the caller (lister).
+     * @param operator The account that can manage NFTs on behalf of 
+     *                 collectors subscribed to the caller.
      */
     function removeOperator(address operator) public {
         _operators[msg.sender].remove(operator);
@@ -89,64 +128,109 @@ contract PreApproveRegistry {
     // =============================================================
 
     /**
-     * @dev Returns whether `user` is subscribed to `admin`.
-     * @param user  The user.
-     * @param admin The maintainer of the pre-approval list.
+     * @dev Returns whether `collector` is subscribed to `lister`.
+     * @param collector The NFT collector using the registry.
+     * @param lister    The maintainer of the pre-approve list.
+     * @return has Whether the `collector` is subscribed.
      */
-    function hasSubscription(address user, address admin) public view returns (bool) {
-        return _subscriptions[user].contains(admin);
+    function hasSubscription(address collector, address lister) public view returns (bool has) {
+        has = _subscriptions[collector].contains(lister);
     }
 
     /**
-     * @dev Returns an array of all the admins which `user` is subscribed to.
-     * @param user  The user.
+     * @dev Returns an array of all the listers which `collector` is subscribed to.
+     * @param collector The NFT collector using the registry.
+     * @return list The list of listers.
      */
-    function subscriptions(address user) public view returns (address[] memory) {
-        return _subscriptions[user].values();
+    function subscriptions(address collector) public view returns (address[] memory list) {
+        list = _subscriptions[collector].values();
     }
 
     /**
-     * @dev Returns the total number of admins `user` is subscribed to.
-     * @param user  The user.
+     * @dev Returns the total number of listers `collector` is subscribed to.
+     * @param collector The NFT collector using the registry.
+     * @return total The length of the list of listers subscribed by `collector`.
      */
-    function totalSubscriptions(address user) public view returns (uint256) {
-        return _subscriptions[user].length();
+    function totalSubscriptions(address collector) public view returns (uint256 total) {
+        total = _subscriptions[collector].length();
     }
 
     /**
-     * @dev Returns the `admin` which `user` is subscribed to at `index`.
-     * @param user  The user.
-     * @param index The index of the enumerable set.
+     * @dev Returns the `lister` which `collector` is subscribed to at `index`.
+     * @param collector The NFT collector using the registry.
+     * @param index     The index of the enumerable set.
+     * @return lister The mainter of the pre-approve list.
      */
-    function subscriptionAt(address user, uint256 index) public view returns (address) {
-        return _subscriptions[user].at(index);
+    function subscriptionAt(address collector, uint256 index) public view returns (address lister) {
+        lister = _subscriptions[collector].at(index);
     }
 
-    
-    function operators(address admin) public view returns (address[] memory result) {
-        bytes32[] memory a = _operators[admin]._inner._keys.values();
+    /**
+     * @dev Returns the list of operators in the pre-approve list by `lister`.
+     * @param lister The maintainer of the pre-approve list.
+     * @return list  The list of operators.
+     */
+    function operators(address lister) public view returns (address[] memory list) {
+        bytes32[] memory a = _operators[lister]._inner._keys.values();
         assembly {
-            result := a
+            list := a
         }
     }
 
-    function totalOperators(address admin) public view returns (uint256) {
-        return _operators[admin].length();
+    /**
+     * @dev Returns the list of operators in the pre-approve list by `lister`.
+     * @param lister The maintainer of the pre-approve list.
+     * @return total The length of the list of operators.
+     */
+    function totalOperators(address lister) public view returns (uint256 total) {
+        total = _operators[lister].length();
     }
 
-    function operatorAt(address admin, uint256 index) public view returns (address, uint256) {
-        return _operators[admin].at(index);
+    /**
+     * @dev Returns the operator at `index` of the pre-approve list by `lister`.
+     * @param lister The maintainer of the pre-approve list.
+     * @param index  The index of the list.
+     * @param operator The account that can manage NFTs on behalf of 
+     *                 collectors subscribed to `lister`.
+     */
+    function operatorAt(address lister, uint256 index)
+        public
+        view
+        returns (address operator, uint256 begins)
+    {
+        (operator, begins) = _operators[lister].at(index);
     }
 
-    function startTime(address admin, address operator) public view returns (uint256) {
-        return _operators[admin].get(operator);
+    /**
+     * @dev Returns the Unix timestamp when `operator` is able to start managing
+     *      the NFTs of collectors subscribed to `lister`.
+     * @param lister   The maintainer of the pre-approve list.
+     * @param operator The account that can manage NFTs on behalf of 
+     *                 collectors subscribed to `lister`.
+     * @return begins The Unix timestamp.
+     */
+    function startTime(address lister, address operator) public view returns (uint256 begins) {
+        begins = _operators[lister].get(operator);
     }
 
-    function isPreApproved(address user, address admin, address operator) public view returns (bool result) {
-        if (_subscriptions[user].contains(admin)) {
-            uint256 t = uint256(_operators[admin]._inner._values[bytes32(uint256(uint160(operator)))]);
+     /**
+      * [isPreApproved description]
+      * @param collector The NFT collector using the registry.
+      * @param lister The maintainer of the pre-approve list.
+      * @param operator The account that can manage NFTs on behalf of 
+      *                 collectors subscribed to `lister`.
+      * @return preApproved Whether `operator` is effectively pre-approved.
+      */
+    function isPreApproved(address collector, address lister, address operator)
+        public
+        view
+        returns (bool preApproved)
+    {
+        if (_subscriptions[collector].contains(lister)) {
+            uint256 begins =
+                uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
             assembly {
-                result := iszero(or(iszero(t), lt(timestamp(), t)))
+                preApproved := iszero(or(iszero(begins), lt(timestamp(), begins)))
             }
         }
     }
