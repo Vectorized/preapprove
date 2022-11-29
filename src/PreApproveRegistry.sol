@@ -6,7 +6,7 @@ import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
 
 /**
  * @title PreApproveRegistry
- * @notice A on-chain registry where listers can create lists 
+ * @notice A on-chain registry where listers can create lists
  *         of pre-approved operators, which NFT collectors can subscribe to.
  *         When a collector is subscribed to a list by a lister,
  *         they can use pre-approved operators to manage their NFTs
@@ -50,18 +50,20 @@ contract PreApproveRegistry {
     /**
      * @dev Emitted when `lister` adds `operator` to their pre-approve list.
      * @param lister    The maintainer of the pre-approve list.
-     * @param operator  The account that can manage NFTs on behalf of 
+     * @param operator  The account that can manage NFTs on behalf of
      *                  collectors subscribed to `lister`.
      * @param startTime The Unix timestamp when the `operator` can begin to manage
      *                  NFTs on on behalf of collectors subscribed to `lister`.
      */
-    event OperatorAdded(address indexed lister, address indexed operator, uint256 indexed startTime);
+    event OperatorAdded(
+        address indexed lister, address indexed operator, uint256 indexed startTime
+    );
 
     /**
      * @dev Emitted when `lister` removes `operator` from their pre-approve list.
      * The `operator` will be immediately removed from the list.
      * @param lister    The maintainer of the pre-approve list.
-     * @param operator  The account that can manage NFTs on behalf of 
+     * @param operator  The account that can manage NFTs on behalf of
      *                  collectors subscribed to `lister`.
      */
     event OperatorRemoved(address indexed lister, address indexed operator);
@@ -73,6 +75,8 @@ contract PreApproveRegistry {
     /**
      * @dev Mapping of `lister` => (`operator` => `startTime`).
      * If `startTime` is zero, it is disabled.
+     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
+     * since we are already past the Unix epoch.
      */
     mapping(address => EnumerableMap.AddressToUintMap) internal _operators;
 
@@ -105,22 +109,25 @@ contract PreApproveRegistry {
 
     /**
      * @dev Adds the `operator` to the pre-approve list maintained by the caller (lister).
-     * @param operator The account that can manage NFTs on behalf of 
+     * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) public {
         unchecked {
-            _operators[msg.sender].set(operator, block.timestamp + START_DELAY);
+            uint256 begins = block.timestamp + START_DELAY;
+            _operators[msg.sender].set(operator, begins);
+            emit OperatorAdded(msg.sender, operator, begins);
         }
     }
 
     /**
      * @dev Removes the `operator` from the pre-approve list maintained by the caller (lister).
-     * @param operator The account that can manage NFTs on behalf of 
+     * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
     function removeOperator(address operator) public {
         _operators[msg.sender].remove(operator);
+        emit OperatorRemoved(msg.sender, operator);
     }
 
     // =============================================================
@@ -161,7 +168,11 @@ contract PreApproveRegistry {
      * @param index     The index of the enumerable set.
      * @return lister The mainter of the pre-approve list.
      */
-    function subscriptionAt(address collector, uint256 index) public view returns (address lister) {
+    function subscriptionAt(address collector, uint256 index)
+        public
+        view
+        returns (address lister)
+    {
         lister = _subscriptions[collector].at(index);
     }
 
@@ -190,7 +201,7 @@ contract PreApproveRegistry {
      * @dev Returns the operator at `index` of the pre-approve list by `lister`.
      * @param lister The maintainer of the pre-approve list.
      * @param index  The index of the list.
-     * @param operator The account that can manage NFTs on behalf of 
+     * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to `lister`.
      */
     function operatorAt(address lister, uint256 index)
@@ -205,30 +216,29 @@ contract PreApproveRegistry {
      * @dev Returns the Unix timestamp when `operator` is able to start managing
      *      the NFTs of collectors subscribed to `lister`.
      * @param lister   The maintainer of the pre-approve list.
-     * @param operator The account that can manage NFTs on behalf of 
+     * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to `lister`.
      * @return begins The Unix timestamp.
      */
     function startTime(address lister, address operator) public view returns (uint256 begins) {
-        begins = _operators[lister].get(operator);
+        begins = uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
     }
 
-     /**
-      * [isPreApproved description]
-      * @param collector The NFT collector using the registry.
-      * @param lister The maintainer of the pre-approve list.
-      * @param operator The account that can manage NFTs on behalf of 
-      *                 collectors subscribed to `lister`.
-      * @return preApproved Whether `operator` is effectively pre-approved.
-      */
+    /**
+     * [isPreApproved description]
+     * @param collector The NFT collector using the registry.
+     * @param lister The maintainer of the pre-approve list.
+     * @param operator The account that can manage NFTs on behalf of
+     *                 collectors subscribed to `lister`.
+     * @return preApproved Whether `operator` is effectively pre-approved.
+     */
     function isPreApproved(address collector, address lister, address operator)
         public
         view
         returns (bool preApproved)
     {
         if (_subscriptions[collector].contains(lister)) {
-            uint256 begins =
-                uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
+            uint256 begins = startTime(lister, operator);
             assembly {
                 preApproved := iszero(or(iszero(begins), lt(timestamp(), begins)))
             }

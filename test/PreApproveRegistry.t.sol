@@ -7,69 +7,188 @@ import {PreApproveRegistry} from "../src/PreApproveRegistry.sol";
 
 contract PreApproveRegistryTest is TestPlus {
     event Subscribed(address indexed collector, address indexed lister);
-    
+
     event Unsubscribed(address indexed collector, address indexed lister);
-    
-    event OperatorAdded(address indexed lister, address indexed operator, uint256 indexed startTime);
+
+    event OperatorAdded(
+        address indexed lister, address indexed operator, uint256 indexed startTime
+    );
 
     event OperatorRemoved(address indexed lister, address indexed operator);
 
     PreApproveRegistry registry;
-    
+
+    struct TestVars {
+        address lister;
+        address operator;
+        address collector;
+        address[] listers;
+        address[] operators;
+        address[] collectors;
+        uint256 startDelay;
+    }
+
     function setUp() public {
         registry = new PreApproveRegistry();
     }
 
-    function testSettersAndGetters(uint256) public {
-        assertEq(registry.operators(address(this)), new address[](0));
+    function testIsPreApproved(uint256) public {
+        TestVars memory v = _testVars(1);
+        assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
 
-        address[] memory listers = new address[](8);
-        for (uint256 i; i < listers.length; ++i) {
-            listers[i] = _randomAccount();
+        vm.prank(v.collector);
+        registry.subscribe(v.lister);
+
+        for (uint256 t; t != 2; ++t) {
+            vm.prank(v.lister);
+            registry.addOperator(v.operator);
+            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
+
+            uint256 begins = registry.startTime(v.lister, v.operator);
+            vm.warp(begins - 1);
+            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), false);
+
+            vm.warp(begins);
+            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), true);
+
+            vm.warp(begins + _random() % 256);
+            assertEq(registry.isPreApproved(v.collector, v.lister, v.operator), true);
+
+            vm.warp(block.timestamp + _random() % 8);
+
+            if (_random() % 2 == 0) {
+                vm.prank(v.lister);
+                registry.removeOperator(v.operator);
+                assertEq(registry.startTime(v.lister, v.operator), 0);
+            }
         }
-        LibSort.sort(listers);
+    }
 
-        address[] memory collectors = new address[](3);
-        for (uint256 i; i < collectors.length; ++i) {
-            collectors[i] = _randomAccount();
-        }
-        LibSort.sort(collectors);
+    function testOperatorListingGettersAndSetters(uint256) public {
+        TestVars memory v = _testVars(4);
 
-        address lister;
-        address collector;
-
-        for (uint256 t; t < 256; ++t) {
-            lister = listers[_random() % listers.length];
-            collector = collectors[_random() % collectors.length];
+        for (uint256 t; t != 3; ++t) {
+            v.lister = v.listers[_random() % v.listers.length];
+            v.operator = v.operators[_random() % v.operators.length];
 
             vm.expectEmit(true, true, true, true);
-            emit Subscribed(collector, lister);
-            vm.prank(collector);
-            registry.subscribe(lister);
+            emit OperatorAdded(v.lister, v.operator, block.timestamp + v.startDelay);
+            vm.prank(v.lister);
+            registry.addOperator(v.operator);
 
-            assertEq(registry.hasSubscription(collector, lister), true);
-
-            lister = listers[_random() % listers.length];
+            v.operator = v.operators[_random() % v.operators.length];
             vm.expectEmit(true, true, true, true);
-            emit Unsubscribed(collector, lister);
-            vm.prank(collector);
-            registry.unsubscribe(lister);
-            assertEq(registry.hasSubscription(collector, lister), false);
+            emit OperatorRemoved(v.lister, v.operator);
+            vm.prank(v.lister);
+            registry.removeOperator(v.operator);
+
+            vm.warp(block.timestamp + _random() % 256);
         }
 
-        collector = collectors[_random() % collectors.length];
-        for (uint256 i; i < listers.length; ++i) {
-            vm.prank(collector);
-            registry.subscribe(collectors[i]);
+        for (uint256 i; i != v.operators.length; ++i) {
+            vm.prank(v.lister);
+            registry.removeOperator(v.operators[i]);
         }
-        address[] memory subscriptions = registry.subscriptions(collector);
-        LibSort.sort(subscriptions);
-        assertEq(subscriptions, listers);
+        assertEq(registry.operators(v.lister), new address[](0));
 
+        for (uint256 i; i != v.operators.length; ++i) {
+            vm.prank(v.lister);
+            registry.addOperator(v.operators[i]);
+            address[] memory expectedOperators = new address[](i + 1);
+            for (uint256 j; j != expectedOperators.length; ++j) {
+                expectedOperators[j] = v.operators[j];
+            }
+            address[] memory operators = registry.operators(v.lister);
+            assertEq(registry.totalOperators(v.lister), operators.length);
+            for (uint256 j; j != expectedOperators.length; ++j) {
+                (address operator, uint256 begins) = registry.operatorAt(v.lister, j);
+                assertEq(operator, operators[j]);
+                assertEq(begins, block.timestamp + v.startDelay);
+                assertEq(
+                    registry.startTime(v.lister, v.operators[i]), block.timestamp + v.startDelay
+                );
+            }
+            LibSort.sort(operators);
+            assertEq(operators, expectedOperators);
+        }
 
+        for (uint256 i; i != v.operators.length; ++i) {
+            vm.prank(v.lister);
+            registry.removeOperator(v.operators[i]);
+        }
+        assertEq(registry.operators(v.lister), new address[](0));
+    }
 
-        
-        
+    function testSuscriptionGettersAndSetters(uint256) public {
+        TestVars memory v = _testVars(4);
+
+        for (uint256 t; t != 3; ++t) {
+            v.lister = v.listers[_random() % v.listers.length];
+            v.collector = v.collectors[_random() % v.collectors.length];
+
+            vm.expectEmit(true, true, true, true);
+            emit Subscribed(v.collector, v.lister);
+            vm.prank(v.collector);
+            registry.subscribe(v.lister);
+
+            assertEq(registry.hasSubscription(v.collector, v.lister), true);
+
+            v.lister = v.listers[_random() % v.listers.length];
+            vm.expectEmit(true, true, true, true);
+            emit Unsubscribed(v.collector, v.lister);
+            vm.prank(v.collector);
+            registry.unsubscribe(v.lister);
+            assertEq(registry.hasSubscription(v.collector, v.lister), false);
+        }
+
+        for (uint256 i; i != v.listers.length; ++i) {
+            vm.prank(v.collector);
+            registry.unsubscribe(v.listers[i]);
+        }
+        assertEq(registry.subscriptions(v.collector), new address[](0));
+
+        for (uint256 i; i != v.listers.length; ++i) {
+            vm.prank(v.collector);
+            registry.subscribe(v.listers[i]);
+            address[] memory expectedSubscriptions = new address[](i + 1);
+            for (uint256 j; j != expectedSubscriptions.length; ++j) {
+                expectedSubscriptions[j] = v.listers[j];
+            }
+            address[] memory subscriptions = registry.subscriptions(v.collector);
+            assertEq(registry.totalSubscriptions(v.collector), subscriptions.length);
+            for (uint256 j; j != expectedSubscriptions.length; ++j) {
+                assertEq(registry.subscriptionAt(v.collector, j), subscriptions[j]);
+            }
+            LibSort.sort(subscriptions);
+            assertEq(subscriptions, expectedSubscriptions);
+        }
+
+        for (uint256 i; i != v.listers.length; ++i) {
+            vm.prank(v.collector);
+            registry.unsubscribe(v.listers[i]);
+        }
+        assertEq(registry.subscriptions(v.collector), new address[](0));
+    }
+
+    function _testVars(uint256 n) internal returns (TestVars memory v) {
+        v.listers = _randomAccounts(n);
+        v.operators = _randomAccounts(n);
+        v.collectors = _randomAccounts(n);
+        v.lister = v.listers[_random() % n];
+        v.operator = v.operators[_random() % n];
+        v.collector = v.collectors[_random() % n];
+        v.startDelay = registry.START_DELAY();
+    }
+
+    function _randomAccounts(uint256 n) internal returns (address[] memory a) {
+        a = new address[](n);
+        unchecked {
+            for (uint256 i; i != n; ++i) {
+                a[i] = _randomAccount();
+            }
+        }
+        LibSort.insertionSort(a);
+        LibSort.uniquifySorted(a);
     }
 
     function _randomAccount() internal returns (address a) {
