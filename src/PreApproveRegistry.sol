@@ -1,7 +1,121 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
+library EnumerableAddressSetMapping {
+    struct SetMapping {
+        // Storage of set values
+        mapping(address => address[]) _values;
+    }
+
+    function add(SetMapping storage sm, address key, address value) internal returns (bool) {
+        if (!contains(sm, key, value)) {
+            sm._values[key].push(value);
+
+            uint256 n = sm._values[key].length;
+
+            /// @solidity memory-safe-assembly
+            assembly {
+                // The value is stored at length-1, but we add 1 to all indexes
+                // and use 0 as a sentinel value
+                mstore(0x20, value)
+                mstore(0x0c, sm.slot)
+                mstore(returndatasize(), key)
+                sstore(keccak256(returndatasize(), 0x40), n)
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function remove(SetMapping storage sm, address key, address value) internal returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex;
+        uint256 valueSlot;
+        /// @solidity memory-safe-assembly
+        assembly {
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            mstore(0x20, value)
+            mstore(0x0c, sm.slot)
+            mstore(returndatasize(), key)
+            valueSlot := keccak256(returndatasize(), 0x40)
+            valueIndex := sload(valueSlot)
+        }
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(sm, value)
+            // To delete an element from the _values array in O(1),
+            // we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+            unchecked {
+                uint256 toDeleteIndex = valueIndex - 1;
+                uint256 lastIndex = sm._values[key].length - 1;
+
+                if (lastIndex != toDeleteIndex) {
+                    address lastValue = sm._values[key][lastIndex];
+
+                    // Move the last value to the index where the value to delete is
+                    sm._values[key][toDeleteIndex] = lastValue;
+
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        // Update the index for the moved value
+                        mstore(0x20, lastValue)
+                        mstore(0x0c, sm.slot)
+                        mstore(returndatasize(), key)
+                        // Replace lastValue's index to valueIndex
+                        sstore(keccak256(returndatasize(), 0x40), valueIndex)
+                    }
+                }
+                // Delete the slot where the moved value was stored
+                sm._values[key].pop();
+
+                /// @solidity memory-safe-assembly
+                assembly {
+                    // Delete the index for the deleted slot
+                    sstore(valueSlot, 0)
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function contains(SetMapping storage sm, address key, address value)
+        internal
+        view
+        returns (bool result)
+    {
+        /// @solidity memory-safe-assembly
+        assembly {
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            mstore(0x20, value)
+            mstore(0x0c, sm.slot)
+            mstore(returndatasize(), key)
+            result := sload(keccak256(returndatasize(), 0x40))
+        }
+    }
+
+    function length(SetMapping storage sm, address key) internal view returns (uint256) {
+        return sm._values[key].length;
+    }
+
+    function at(SetMapping storage sm, address key, uint256 index)
+        internal
+        view
+        returns (address)
+    {
+        return sm._values[key][index];
+    }
+
+    function values(SetMapping storage sm, address key) internal view returns (address[] memory) {
+        return sm._values[key];
+    }
+}
 
 /**
  * @title PreApproveRegistry
@@ -16,7 +130,7 @@ import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
  *         before they take effect.
  */
 contract PreApproveRegistry {
-    using EnumerableSet for *;
+    using EnumerableAddressSetMapping for *;
 
     // =============================================================
     //                            EVENTS
@@ -82,12 +196,12 @@ contract PreApproveRegistry {
     /**
      * @dev Mapping of `collector => EnumerableSet.AddressSet(lister => exists)`.
      */
-    mapping(address => EnumerableSet.AddressSet) internal _subscriptions;
+    EnumerableAddressSetMapping.SetMapping internal _subscriptions;
 
     /**
      * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
      */
-    mapping(address => EnumerableSet.AddressSet) internal _operators;
+    EnumerableAddressSetMapping.SetMapping internal _operators;
 
     // =============================================================
     //               PUBLIC / EXTERNAL WRITE FUNCTIONS
@@ -98,7 +212,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      */
     function subscribe(address lister) external {
-        _subscriptions[msg.sender].add(lister);
+        _subscriptions.add(msg.sender, lister);
         emit Subscribed(msg.sender, lister);
     }
 
@@ -107,7 +221,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      */
     function unsubscribe(address lister) external {
-        _subscriptions[msg.sender].remove(lister);
+        _subscriptions.remove(msg.sender, lister);
         emit Unsubscribed(msg.sender, lister);
     }
 
@@ -117,7 +231,7 @@ contract PreApproveRegistry {
      *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) external {
-        _operators[msg.sender].add(operator);
+        _operators.add(msg.sender, operator);
         uint256 begins;
         /// @solidity memory-safe-assembly
         assembly {
@@ -137,7 +251,7 @@ contract PreApproveRegistry {
      *                 collectors subscribed to the caller.
      */
     function removeOperator(address operator) external {
-        _operators[msg.sender].remove(operator);
+        _operators.remove(msg.sender, operator);
         /// @solidity memory-safe-assembly
         assembly {
             // The sequence of overlays automatically cleans the upper bits of `operator`.
@@ -160,7 +274,7 @@ contract PreApproveRegistry {
      * @return has Whether the `collector` is subscribed.
      */
     function hasSubscription(address collector, address lister) external view returns (bool has) {
-        has = _subscriptions[collector].contains(lister);
+        has = _subscriptions.contains(collector, lister);
     }
 
     /**
@@ -169,7 +283,7 @@ contract PreApproveRegistry {
      * @return list The list of listers.
      */
     function subscriptions(address collector) external view returns (address[] memory list) {
-        list = _subscriptions[collector].values();
+        list = _subscriptions.values(collector);
     }
 
     /**
@@ -178,7 +292,7 @@ contract PreApproveRegistry {
      * @return total The length of the list of listers subscribed by `collector`.
      */
     function totalSubscriptions(address collector) external view returns (uint256 total) {
-        total = _subscriptions[collector].length();
+        total = _subscriptions.length(collector);
     }
 
     /**
@@ -192,7 +306,7 @@ contract PreApproveRegistry {
         view
         returns (address lister)
     {
-        lister = _subscriptions[collector].at(index);
+        lister = _subscriptions.at(collector, index);
     }
 
     /**
@@ -201,7 +315,7 @@ contract PreApproveRegistry {
      * @return list  The list of operators.
      */
     function operators(address lister) external view returns (address[] memory list) {
-        list = _operators[lister].values();
+        list = _operators.values(lister);
     }
 
     /**
@@ -210,7 +324,7 @@ contract PreApproveRegistry {
      * @return total The length of the list of operators.
      */
     function totalOperators(address lister) external view returns (uint256 total) {
-        total = _operators[lister].length();
+        total = _operators.length(lister);
     }
 
     /**
@@ -225,7 +339,7 @@ contract PreApproveRegistry {
         view
         returns (address operator, uint256 begins)
     {
-        operator = _operators[lister].at(index);
+        operator = _operators.at(lister, index);
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, operator)
@@ -275,7 +389,7 @@ contract PreApproveRegistry {
             return begins == 0 ? false : block.timestamp >= begins;
         }
 
-        Assembly version saves 255 gas.
+        Assembly version saves 355 gas.
 
         We can skip the masking of the addresses. 
         In case of dirty upper bits, this function will return false,
@@ -285,10 +399,9 @@ contract PreApproveRegistry {
 
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x20, returndatasize())
+            mstore(0x20, lister)
+            mstore(0x0c, 0)
             mstore(returndatasize(), collector)
-            mstore(0x20, add(keccak256(returndatasize(), 0x40), 1))
-            mstore(returndatasize(), lister)
 
             if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
 
