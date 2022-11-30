@@ -1,4 +1,4 @@
-PreApproveRegistryTest:testIsPreApproved(uint256) (runs: 256, μ: 205852, ~: 230099)
-PreApproveRegistryTest:testIsPreApproved2() (gas: 230144)
-PreApproveRegistryTest:testOperatorListingGettersAndSetters(uint256) (runs: 256, μ: 559352, ~: 560594)
-PreApproveRegistryTest:testSuscriptionGettersAndSetters(uint256) (runs: 256, μ: 432235, ~: 431701)
+PreApproveRegistryTest:testIsPreApproved(uint256) (runs: 256, μ: 206679, ~: 230024)
+PreApproveRegistryTest:testIsPreApproved2() (gas: 230001)
+PreApproveRegistryTest:testOperatorListingGettersAndSetters(uint256) (runs: 256, μ: 561732, ~: 574358)
+PreApproveRegistryTest:testSuscriptionGettersAndSetters(uint256) (runs: 256, μ: 429873, ~: 436635)

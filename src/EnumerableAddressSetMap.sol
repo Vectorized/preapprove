@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+/**
+ * @title PreApproveRegistry
+ * @notice This library enumlates a `mapping(address => EnumerableSet.AddressSet())`.
+ *         For gas savings, we shall use `returndatasize()` as a replacement for 0.
+ *         Modified from OpenZeppelin's EnumerableSet (MIT Licensed).
+ *         https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol
+ */
 library EnumerableAddressSetMap {
     struct Map {
-        // Storage of set values
         mapping(address => address[]) _values;
     }
 
-    function add(Map storage sm, address key, address value) internal returns (bool) {
+    function add(Map storage sm, address key, address value) internal {
         if (!contains(sm, key, value)) {
             sm._values[key].push(value);
 
@@ -16,26 +22,27 @@ library EnumerableAddressSetMap {
             /// @solidity memory-safe-assembly
             assembly {
                 // The value is stored at length-1, but we add 1 to all indexes
-                // and use 0 as a sentinel value
+                // and use 0 as a sentinel value.
+                // Equivalent to:
+                // `_indexes[key][value] = n`.
                 mstore(0x20, value)
                 mstore(0x0c, sm.slot)
                 mstore(returndatasize(), key)
                 sstore(keccak256(returndatasize(), 0x40), n)
             }
-            return true;
-        } else {
-            return false;
         }
     }
 
-    function remove(Map storage sm, address key, address value) internal returns (bool) {
+    function remove(Map storage sm, address key, address value) internal {
         // We read and store the value's index to prevent multiple reads from the same storage slot
         uint256 valueIndex;
         uint256 valueSlot;
         /// @solidity memory-safe-assembly
         assembly {
             // The value is stored at length-1, but we add 1 to all indexes
-            // and use 0 as a sentinel value
+            // and use 0 as a sentinel value.
+            // Equivalent to:
+            // `valueIndex = _indexes[key][value]`.
             mstore(0x20, value)
             mstore(0x0c, sm.slot)
             mstore(returndatasize(), key)
@@ -56,12 +63,14 @@ library EnumerableAddressSetMap {
                 if (lastIndex != toDeleteIndex) {
                     address lastValue = sm._values[key][lastIndex];
 
-                    // Move the last value to the index where the value to delete is
+                    // Move the last value to the index where the value to delete is.
                     sm._values[key][toDeleteIndex] = lastValue;
 
                     /// @solidity memory-safe-assembly
                     assembly {
-                        // Update the index for the moved value
+                        // Update the index for the moved value.
+                        // Equivalent to:
+                        // `_indexes[key][lastValue] = valueIndex`.
                         mstore(0x20, lastValue)
                         mstore(0x0c, sm.slot)
                         mstore(returndatasize(), key)
@@ -75,12 +84,11 @@ library EnumerableAddressSetMap {
                 /// @solidity memory-safe-assembly
                 assembly {
                     // Delete the index for the deleted slot
+                    // Equivalent to:
+                    // `_indexes[key][value] = 0`.
                     sstore(valueSlot, 0)
                 }
             }
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -92,11 +100,13 @@ library EnumerableAddressSetMap {
         /// @solidity memory-safe-assembly
         assembly {
             // The value is stored at length-1, but we add 1 to all indexes
-            // and use 0 as a sentinel value
+            // and use 0 as a sentinel value.
+            // Equivalent to:
+            // `result = _indexes[key][lastValue] != 0`.
             mstore(0x20, value)
             mstore(0x0c, sm.slot)
             mstore(returndatasize(), key)
-            result := sload(keccak256(returndatasize(), 0x40))
+            result := iszero(iszero(sload(keccak256(returndatasize(), 0x40))))
         }
     }
 
