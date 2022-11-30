@@ -90,6 +90,12 @@ contract PreApproveRegistry {
     EnumerableAddressSetMap.Map internal _operators;
 
     // =============================================================
+    //                          CONSTRUCTOR
+    // =============================================================
+
+    constructor() payable {}
+
+    // =============================================================
     //               PUBLIC / EXTERNAL WRITE FUNCTIONS
     // =============================================================
 
@@ -97,7 +103,7 @@ contract PreApproveRegistry {
      * @dev Subscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function subscribe(address lister) external {
+    function subscribe(address lister) external payable {
         _subscriptions.add(msg.sender, lister);
         emit Subscribed(msg.sender, lister);
     }
@@ -106,7 +112,7 @@ contract PreApproveRegistry {
      * @dev Unsubscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function unsubscribe(address lister) external {
+    function unsubscribe(address lister) external payable {
         _subscriptions.remove(msg.sender, lister);
         emit Unsubscribed(msg.sender, lister);
     }
@@ -116,7 +122,7 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function addOperator(address operator) external {
+    function addOperator(address operator) external payable {
         _operators.add(msg.sender, operator);
         uint256 begins;
         /// @solidity memory-safe-assembly
@@ -138,7 +144,7 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function removeOperator(address operator) external {
+    function removeOperator(address operator) external payable {
         _operators.remove(msg.sender, operator);
         /// @solidity memory-safe-assembly
         assembly {
