@@ -389,7 +389,7 @@ contract PreApproveRegistry {
             return begins == 0 ? false : block.timestamp >= begins;
         }
 
-        Assembly version saves 355 gas.
+        Assembly version saves 370 gas.
 
         We can skip the masking of the addresses. 
         In case of dirty upper bits, this function will return false,
