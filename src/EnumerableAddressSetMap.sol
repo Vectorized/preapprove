@@ -28,7 +28,7 @@ library EnumerableAddressSetMap {
                 mstore(0x20, value)
                 mstore(0x0c, sm.slot)
                 mstore(returndatasize(), key)
-                sstore(keccak256(returndatasize(), 0x40), n)
+                sstore(keccak256(0x0c, 0x34), n)
             }
         }
     }
@@ -46,7 +46,7 @@ library EnumerableAddressSetMap {
             mstore(0x20, value)
             mstore(0x0c, sm.slot)
             mstore(returndatasize(), key)
-            valueSlot := keccak256(returndatasize(), 0x40)
+            valueSlot := keccak256(0x0c, 0x34)
             valueIndex := sload(valueSlot)
         }
 
@@ -75,7 +75,7 @@ library EnumerableAddressSetMap {
                         mstore(0x0c, sm.slot)
                         mstore(returndatasize(), key)
                         // Replace lastValue's index to valueIndex
-                        sstore(keccak256(returndatasize(), 0x40), valueIndex)
+                        sstore(keccak256(0x0c, 0x34), valueIndex)
                     }
                 }
                 // Delete the slot where the moved value was stored
@@ -106,7 +106,7 @@ library EnumerableAddressSetMap {
             mstore(0x20, value)
             mstore(0x0c, sm.slot)
             mstore(returndatasize(), key)
-            result := iszero(iszero(sload(keccak256(returndatasize(), 0x40))))
+            result := iszero(iszero(sload(keccak256(0x0c, 0x34))))
         }
     }
 

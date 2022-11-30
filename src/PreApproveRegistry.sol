@@ -66,15 +66,6 @@ contract PreApproveRegistry {
      */
     uint256 public constant START_DELAY = 86400 * 7;
 
-    /**
-     * @dev For extra efficiency, we use our own custom mapping for the mapping of
-     * (`lister`, `operator`) => `startTime`.
-     * If `startTime` is zero, it is disabled.
-     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
-     * since we are already past the Unix epoch.
-     */
-    uint256 private constant _START_TIME_SLOT_SEED = 0xd4ac65089b313d464ac66fd0;
-
     // =============================================================
     //                            STORAGE
     // =============================================================
@@ -88,6 +79,15 @@ contract PreApproveRegistry {
      * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
      */
     EnumerableAddressSetMap.Map internal _operators;
+
+    /**
+     * @dev For extra efficiency, we use our own custom mapping for the mapping of
+     * (`lister`, `operator`) => `startTime`.
+     * If `startTime` is zero, it is disabled.
+     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
+     * since we are already past the Unix epoch.
+     */
+    uint256 internal _startTimes;
 
     // =============================================================
     //                          CONSTRUCTOR
@@ -132,9 +132,9 @@ contract PreApproveRegistry {
             // Equivalent to:
             // `_startTimes[lister][operator] = begins`.
             mstore(0x20, operator)
-            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(0x0c, _startTimes.slot)
             mstore(returndatasize(), caller())
-            sstore(keccak256(returndatasize(), 0x40), begins)
+            sstore(keccak256(0x0c, 0x34), begins)
         }
         emit OperatorAdded(msg.sender, operator, begins);
     }
@@ -152,9 +152,9 @@ contract PreApproveRegistry {
             // Equivalent to:
             // `_startTimes[lister][operator] = 0`.
             mstore(0x20, operator)
-            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(0x0c, _startTimes.slot)
             mstore(returndatasize(), caller())
-            sstore(keccak256(returndatasize(), 0x40), returndatasize())
+            sstore(keccak256(0x0c, 0x34), returndatasize())
         }
         emit OperatorRemoved(msg.sender, operator);
     }
@@ -241,9 +241,9 @@ contract PreApproveRegistry {
             // Equivalent to:
             // `begins = _startTimes[lister][operator]`.
             mstore(0x20, operator)
-            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(0x0c, _startTimes.slot)
             mstore(returndatasize(), lister)
-            begins := sload(keccak256(returndatasize(), 0x40))
+            begins := sload(keccak256(0x0c, 0x34))
         }
     }
 
@@ -261,9 +261,9 @@ contract PreApproveRegistry {
             // Equivalent to:
             // `begins = _startTimes[lister][operator]`.
             mstore(0x20, operator)
-            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(0x0c, _startTimes.slot)
             mstore(returndatasize(), lister)
-            begins := sload(keccak256(returndatasize(), 0x40))
+            begins := sload(keccak256(0x0c, 0x34))
         }
     }
 
@@ -288,15 +288,15 @@ contract PreApproveRegistry {
             mstore(0x20, lister)
             mstore(0x0c, returndatasize())
             mstore(returndatasize(), collector)
-            if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
+            if iszero(sload(keccak256(0x0c, 0x34))) { return(0x60, 0x20) }
 
             // Equivalent to:
             // `return _startTimes[lister][operator] != 0 &&
             //         _startTimes[lister][operator] >= block.timestamp`.
             mstore(0x20, operator)
-            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(0x0c, _startTimes.slot)
             mstore(returndatasize(), lister)
-            let begins := sload(keccak256(returndatasize(), 0x40))
+            let begins := sload(keccak256(0x0c, 0x34))
             mstore(returndatasize(), iszero(or(iszero(begins), lt(timestamp(), begins))))
             return(returndatasize(), 0x20)
         }
