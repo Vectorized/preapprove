@@ -90,6 +90,12 @@ contract PreApproveRegistry {
     EnumerableAddressSetMap.Map internal _operators;
 
     // =============================================================
+    //                          CONSTRUCTOR
+    // =============================================================
+
+    constructor() payable {}
+
+    // =============================================================
     //               PUBLIC / EXTERNAL WRITE FUNCTIONS
     // =============================================================
 
@@ -97,7 +103,7 @@ contract PreApproveRegistry {
      * @dev Subscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function subscribe(address lister) external {
+    function subscribe(address lister) external payable {
         _subscriptions.add(msg.sender, lister);
         emit Subscribed(msg.sender, lister);
     }
@@ -106,7 +112,7 @@ contract PreApproveRegistry {
      * @dev Unsubscribes the caller (collector) from `lister`.
      * @param lister The maintainer of the pre-approve list.
      */
-    function unsubscribe(address lister) external {
+    function unsubscribe(address lister) external payable {
         _subscriptions.remove(msg.sender, lister);
         emit Unsubscribed(msg.sender, lister);
     }
@@ -116,13 +122,15 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function addOperator(address operator) external {
+    function addOperator(address operator) external payable {
         _operators.add(msg.sender, operator);
         uint256 begins;
         /// @solidity memory-safe-assembly
         assembly {
             begins := add(timestamp(), START_DELAY)
             // The sequence of overlays automatically cleans the upper bits of `operator`.
+            // Equivalent to:
+            // `_startTimes[lister][operator] = begins`.
             mstore(0x20, operator)
             mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), caller())
@@ -136,11 +144,13 @@ contract PreApproveRegistry {
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
-    function removeOperator(address operator) external {
+    function removeOperator(address operator) external payable {
         _operators.remove(msg.sender, operator);
         /// @solidity memory-safe-assembly
         assembly {
             // The sequence of overlays automatically cleans the upper bits of `operator`.
+            // Equivalent to:
+            // `_startTimes[lister][operator] = 0`.
             mstore(0x20, operator)
             mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), caller())
@@ -228,6 +238,8 @@ contract PreApproveRegistry {
         operator = _operators.at(lister, index);
         /// @solidity memory-safe-assembly
         assembly {
+            // Equivalent to:
+            // `begins = _startTimes[lister][operator]`.
             mstore(0x20, operator)
             mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), lister)
@@ -246,6 +258,8 @@ contract PreApproveRegistry {
     function startTime(address lister, address operator) external view returns (uint256 begins) {
         /// @solidity memory-safe-assembly
         assembly {
+            // Equivalent to:
+            // `begins = _startTimes[lister][operator]`.
             mstore(0x20, operator)
             mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), lister)
@@ -267,30 +281,18 @@ contract PreApproveRegistry {
         view
         returns (bool)
     {
-        /* 
-        Original code:
-
-        if (_subscriptions[collector].contains(lister)) {
-            uint256 begins = startTime(lister, operator);
-            return begins == 0 ? false : block.timestamp >= begins;
-        }
-
-        Assembly version saves 370 gas.
-
-        We can skip the masking of the addresses. 
-        In case of dirty upper bits, this function will return false,
-        and any NFT contracts using this registry will simply revert back
-        to default behavior (the normal ERC721 approval process).
-        */
-
         /// @solidity memory-safe-assembly
         assembly {
+            // Equivalent to:
+            // `if (!_subscriptions.contains(collector, lister)) returns false;`.
             mstore(0x20, lister)
-            mstore(0x0c, 0)
+            mstore(0x0c, returndatasize())
             mstore(returndatasize(), collector)
-
             if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
 
+            // Equivalent to:
+            // `return _startTimes[lister][operator] != 0 &&
+            //         _startTimes[lister][operator] >= block.timestamp`.
             mstore(0x20, operator)
             mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), lister)
