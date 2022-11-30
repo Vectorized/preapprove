@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-// Imports EnumerableSet and EnumerableMap.
-import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
+import "./EnumerableAddressSetMap.sol";
 
 /**
  * @title PreApproveRegistry
@@ -17,17 +16,7 @@ import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
  *         before they take effect.
  */
 contract PreApproveRegistry {
-    using EnumerableSet for *;
-    using EnumerableMap for *;
-
-    // =============================================================
-    //                           CONSTANTS
-    // =============================================================
-
-    /**
-     * @dev The amount of time before a newly added `operator` becomes effective.
-     */
-    uint256 public constant START_DELAY = 86400 * 7;
+    using EnumerableAddressSetMap for *;
 
     // =============================================================
     //                            EVENTS
@@ -69,21 +58,36 @@ contract PreApproveRegistry {
     event OperatorRemoved(address indexed lister, address indexed operator);
 
     // =============================================================
-    //                            STORAGE
+    //                           CONSTANTS
     // =============================================================
 
     /**
-     * @dev Mapping of `lister` => (`operator` => `startTime`).
+     * @dev The amount of time before a newly added `operator` becomes effective.
+     */
+    uint256 public constant START_DELAY = 86400 * 7;
+
+    /**
+     * @dev For extra efficiency, we use our own custom mapping for the mapping of
+     * (`lister`, `operator`) => `startTime`.
      * If `startTime` is zero, it is disabled.
      * Note: It is not possible for any added `operator` to have a `startTime` of zero,
      * since we are already past the Unix epoch.
      */
-    mapping(address => EnumerableMap.AddressToUintMap) internal _operators;
+    uint256 private constant _START_TIME_SLOT_SEED = 0xd4ac65089b313d464ac66fd0;
+
+    // =============================================================
+    //                            STORAGE
+    // =============================================================
 
     /**
-     * @dev Mapping of `collector` => `lister`.
+     * @dev Mapping of `collector => EnumerableSet.AddressSet(lister => exists)`.
      */
-    mapping(address => EnumerableSet.AddressSet) internal _subscriptions;
+    EnumerableAddressSetMap.Map internal _subscriptions;
+
+    /**
+     * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
+     */
+    EnumerableAddressSetMap.Map internal _operators;
 
     // =============================================================
     //               PUBLIC / EXTERNAL WRITE FUNCTIONS
@@ -94,7 +98,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      */
     function subscribe(address lister) external {
-        _subscriptions[msg.sender].add(lister);
+        _subscriptions.add(msg.sender, lister);
         emit Subscribed(msg.sender, lister);
     }
 
@@ -103,7 +107,7 @@ contract PreApproveRegistry {
      * @param lister The maintainer of the pre-approve list.
      */
     function unsubscribe(address lister) external {
-        _subscriptions[msg.sender].remove(lister);
+        _subscriptions.remove(msg.sender, lister);
         emit Unsubscribed(msg.sender, lister);
     }
 
@@ -113,11 +117,18 @@ contract PreApproveRegistry {
      *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) external {
-        unchecked {
-            uint256 begins = block.timestamp + START_DELAY;
-            _operators[msg.sender].set(operator, begins);
-            emit OperatorAdded(msg.sender, operator, begins);
+        _operators.add(msg.sender, operator);
+        uint256 begins;
+        /// @solidity memory-safe-assembly
+        assembly {
+            begins := add(timestamp(), START_DELAY)
+            // The sequence of overlays automatically cleans the upper bits of `operator`.
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), caller())
+            sstore(keccak256(returndatasize(), 0x40), begins)
         }
+        emit OperatorAdded(msg.sender, operator, begins);
     }
 
     /**
@@ -126,7 +137,15 @@ contract PreApproveRegistry {
      *                 collectors subscribed to the caller.
      */
     function removeOperator(address operator) external {
-        _operators[msg.sender].remove(operator);
+        _operators.remove(msg.sender, operator);
+        /// @solidity memory-safe-assembly
+        assembly {
+            // The sequence of overlays automatically cleans the upper bits of `operator`.
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), caller())
+            sstore(keccak256(returndatasize(), 0x40), returndatasize())
+        }
         emit OperatorRemoved(msg.sender, operator);
     }
 
@@ -141,7 +160,7 @@ contract PreApproveRegistry {
      * @return has Whether the `collector` is subscribed.
      */
     function hasSubscription(address collector, address lister) external view returns (bool has) {
-        has = _subscriptions[collector].contains(lister);
+        has = _subscriptions.contains(collector, lister);
     }
 
     /**
@@ -150,7 +169,7 @@ contract PreApproveRegistry {
      * @return list The list of listers.
      */
     function subscriptions(address collector) external view returns (address[] memory list) {
-        list = _subscriptions[collector].values();
+        list = _subscriptions.values(collector);
     }
 
     /**
@@ -159,7 +178,7 @@ contract PreApproveRegistry {
      * @return total The length of the list of listers subscribed by `collector`.
      */
     function totalSubscriptions(address collector) external view returns (uint256 total) {
-        total = _subscriptions[collector].length();
+        total = _subscriptions.length(collector);
     }
 
     /**
@@ -173,7 +192,7 @@ contract PreApproveRegistry {
         view
         returns (address lister)
     {
-        lister = _subscriptions[collector].at(index);
+        lister = _subscriptions.at(collector, index);
     }
 
     /**
@@ -182,10 +201,7 @@ contract PreApproveRegistry {
      * @return list  The list of operators.
      */
     function operators(address lister) external view returns (address[] memory list) {
-        bytes32[] memory a = _operators[lister]._inner._keys.values();
-        assembly {
-            list := a
-        }
+        list = _operators.values(lister);
     }
 
     /**
@@ -194,7 +210,7 @@ contract PreApproveRegistry {
      * @return total The length of the list of operators.
      */
     function totalOperators(address lister) external view returns (uint256 total) {
-        total = _operators[lister].length();
+        total = _operators.length(lister);
     }
 
     /**
@@ -209,7 +225,14 @@ contract PreApproveRegistry {
         view
         returns (address operator, uint256 begins)
     {
-        (operator, begins) = _operators[lister].at(index);
+        operator = _operators.at(lister, index);
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), lister)
+            begins := sload(keccak256(returndatasize(), 0x40))
+        }
     }
 
     /**
@@ -221,7 +244,13 @@ contract PreApproveRegistry {
      * @return begins The Unix timestamp.
      */
     function startTime(address lister, address operator) external view returns (uint256 begins) {
-        begins = uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), lister)
+            begins := sload(keccak256(returndatasize(), 0x40))
+        }
     }
 
     /**
@@ -246,7 +275,7 @@ contract PreApproveRegistry {
             return begins == 0 ? false : block.timestamp >= begins;
         }
 
-        Assembly version saves 255 gas.
+        Assembly version saves 370 gas.
 
         We can skip the masking of the addresses. 
         In case of dirty upper bits, this function will return false,
@@ -256,17 +285,15 @@ contract PreApproveRegistry {
 
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x20, 1)
+            mstore(0x20, lister)
+            mstore(0x0c, 0)
             mstore(returndatasize(), collector)
-            mstore(0x20, add(keccak256(returndatasize(), 0x40), 1))
-            mstore(returndatasize(), lister)
 
             if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
 
-            mstore(0x20, returndatasize())
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), lister)
-            mstore(0x20, add(keccak256(returndatasize(), 0x40), 2))
-            mstore(returndatasize(), operator)
             let begins := sload(keccak256(returndatasize(), 0x40))
             mstore(returndatasize(), iszero(or(iszero(begins), lt(timestamp(), begins))))
             return(returndatasize(), 0x20)
