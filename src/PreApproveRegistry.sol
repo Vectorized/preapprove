@@ -280,7 +280,7 @@ contract PreApproveRegistry {
             // Equivalent to:
             // `if (!_subscriptions.contains(collector, lister)) returns false;`.
             mstore(0x20, lister)
-            mstore(0x0c, 0)
+            mstore(0x0c, returndatasize())
             mstore(returndatasize(), collector)
             if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
 
