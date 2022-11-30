@@ -19,24 +19,6 @@ contract PreApproveRegistry {
     using EnumerableSet for *;
 
     // =============================================================
-    //                           CONSTANTS
-    // =============================================================
-
-    /**
-     * @dev The amount of time before a newly added `operator` becomes effective.
-     */
-    uint256 public constant START_DELAY = 86400 * 7;
-
-    /**
-     * @dev For extra efficiency, we use our own custom mapping for the mapping of
-     * (`lister`, `operator`) => `startTime`.
-     * If `startTime` is zero, it is disabled.
-     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
-     * since we are already past the Unix epoch.
-     */
-    uint256 private constant _START_TIME_SLOT_SEED = 0xd4ac65089b313d464ac66fd0;
-
-    // =============================================================
     //                            EVENTS
     // =============================================================
 
@@ -76,18 +58,36 @@ contract PreApproveRegistry {
     event OperatorRemoved(address indexed lister, address indexed operator);
 
     // =============================================================
-    //                            STORAGE
+    //                           CONSTANTS
     // =============================================================
 
     /**
-     * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
+     * @dev The amount of time before a newly added `operator` becomes effective.
      */
-    mapping(address => EnumerableSet.AddressSet) internal _operators;
+    uint256 public constant START_DELAY = 86400 * 7;
+
+    /**
+     * @dev For extra efficiency, we use our own custom mapping for the mapping of
+     * (`lister`, `operator`) => `startTime`.
+     * If `startTime` is zero, it is disabled.
+     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
+     * since we are already past the Unix epoch.
+     */
+    uint256 private constant _START_TIME_SLOT_SEED = 0xd4ac65089b313d464ac66fd0;
+
+    // =============================================================
+    //                            STORAGE
+    // =============================================================
 
     /**
      * @dev Mapping of `collector => EnumerableSet.AddressSet(lister => exists)`.
      */
     mapping(address => EnumerableSet.AddressSet) internal _subscriptions;
+
+    /**
+     * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
+     */
+    mapping(address => EnumerableSet.AddressSet) internal _operators;
 
     // =============================================================
     //               PUBLIC / EXTERNAL WRITE FUNCTIONS
@@ -285,7 +285,7 @@ contract PreApproveRegistry {
 
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x20, 1)
+            mstore(0x20, returndatasize())
             mstore(returndatasize(), collector)
             mstore(0x20, add(keccak256(returndatasize(), 0x40), 1))
             mstore(returndatasize(), lister)
