@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-// Imports EnumerableSet and EnumerableMap.
-import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
+import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 
 /**
  * @title PreApproveRegistry
@@ -18,7 +17,6 @@ import "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
  */
 contract PreApproveRegistry {
     using EnumerableSet for *;
-    using EnumerableMap for *;
 
     // =============================================================
     //                           CONSTANTS
@@ -28,6 +26,15 @@ contract PreApproveRegistry {
      * @dev The amount of time before a newly added `operator` becomes effective.
      */
     uint256 public constant START_DELAY = 86400 * 7;
+
+    /**
+     * @dev For extra efficiency, we use our own custom mapping for the mapping of
+     * (`lister`, `operator`) => `startTime`.
+     * If `startTime` is zero, it is disabled.
+     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
+     * since we are already past the Unix epoch.
+     */
+    uint256 private constant _START_TIME_SLOT_SEED = 0xd4ac65089b313d464ac66fd0;
 
     // =============================================================
     //                            EVENTS
@@ -73,15 +80,12 @@ contract PreApproveRegistry {
     // =============================================================
 
     /**
-     * @dev Mapping of `lister` => (`operator` => `startTime`).
-     * If `startTime` is zero, it is disabled.
-     * Note: It is not possible for any added `operator` to have a `startTime` of zero,
-     * since we are already past the Unix epoch.
+     * @dev Mapping of `lister => EnumerableSet.AddressSet(operator => exists)`.
      */
-    mapping(address => EnumerableMap.AddressToUintMap) internal _operators;
+    mapping(address => EnumerableSet.AddressSet) internal _operators;
 
     /**
-     * @dev Mapping of `collector` => `lister`.
+     * @dev Mapping of `collector => EnumerableSet.AddressSet(lister => exists)`.
      */
     mapping(address => EnumerableSet.AddressSet) internal _subscriptions;
 
@@ -113,11 +117,18 @@ contract PreApproveRegistry {
      *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) external {
-        unchecked {
-            uint256 begins = block.timestamp + START_DELAY;
-            _operators[msg.sender].set(operator, begins);
-            emit OperatorAdded(msg.sender, operator, begins);
+        _operators[msg.sender].add(operator);
+        uint256 begins;
+        /// @solidity memory-safe-assembly
+        assembly {
+            begins := add(timestamp(), START_DELAY)
+            // The sequence of overlays automatically cleans the upper bits of `operator`.
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), caller())
+            sstore(keccak256(returndatasize(), 0x40), begins)
         }
+        emit OperatorAdded(msg.sender, operator, begins);
     }
 
     /**
@@ -127,6 +138,14 @@ contract PreApproveRegistry {
      */
     function removeOperator(address operator) external {
         _operators[msg.sender].remove(operator);
+        /// @solidity memory-safe-assembly
+        assembly {
+            // The sequence of overlays automatically cleans the upper bits of `operator`.
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), caller())
+            sstore(keccak256(returndatasize(), 0x40), returndatasize())
+        }
         emit OperatorRemoved(msg.sender, operator);
     }
 
@@ -182,10 +201,7 @@ contract PreApproveRegistry {
      * @return list  The list of operators.
      */
     function operators(address lister) external view returns (address[] memory list) {
-        bytes32[] memory a = _operators[lister]._inner._keys.values();
-        assembly {
-            list := a
-        }
+        list = _operators[lister].values();
     }
 
     /**
@@ -209,7 +225,14 @@ contract PreApproveRegistry {
         view
         returns (address operator, uint256 begins)
     {
-        (operator, begins) = _operators[lister].at(index);
+        operator = _operators[lister].at(index);
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), lister)
+            begins := sload(keccak256(returndatasize(), 0x40))
+        }
     }
 
     /**
@@ -221,7 +244,13 @@ contract PreApproveRegistry {
      * @return begins The Unix timestamp.
      */
     function startTime(address lister, address operator) external view returns (uint256 begins) {
-        begins = uint256(_operators[lister]._inner._values[bytes32(uint256(uint160(operator)))]);
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
+            mstore(returndatasize(), lister)
+            begins := sload(keccak256(returndatasize(), 0x40))
+        }
     }
 
     /**
@@ -263,10 +292,9 @@ contract PreApproveRegistry {
 
             if iszero(sload(keccak256(returndatasize(), 0x40))) { return(0x60, 0x20) }
 
-            mstore(0x20, returndatasize())
+            mstore(0x20, operator)
+            mstore(0x0c, _START_TIME_SLOT_SEED)
             mstore(returndatasize(), lister)
-            mstore(0x20, add(keccak256(returndatasize(), 0x40), 2))
-            mstore(returndatasize(), operator)
             let begins := sload(keccak256(returndatasize(), 0x40))
             mstore(returndatasize(), iszero(or(iszero(begins), lt(timestamp(), begins))))
             return(returndatasize(), 0x20)
