@@ -17,7 +17,7 @@ library EnumerableAddressSetMap {
         if (!contains(sm, key, value)) {
             address[] storage curValues = sm._values[key];
             curValues.push(value);
-            
+
             uint256 n = curValues.length;
 
             /// @solidity memory-safe-assembly
