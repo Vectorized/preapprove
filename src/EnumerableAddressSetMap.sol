@@ -15,9 +15,10 @@ library EnumerableAddressSetMap {
 
     function add(Map storage sm, address key, address value) internal {
         if (!contains(sm, key, value)) {
-            sm._values[key].push(value);
-
-            uint256 n = sm._values[key].length;
+            address[] storage curValues = sm._values[key];
+            curValues.push(value);
+            
+            uint256 n = curValues.length;
 
             /// @solidity memory-safe-assembly
             assembly {
@@ -58,13 +59,14 @@ library EnumerableAddressSetMap {
             // This modifies the order of the array, as noted in {at}.
             unchecked {
                 uint256 toDeleteIndex = valueIndex - 1;
-                uint256 lastIndex = sm._values[key].length - 1;
+                address[] storage curValues = sm._values[key];
+                uint256 lastIndex = curValues.length - 1;
 
                 if (lastIndex != toDeleteIndex) {
-                    address lastValue = sm._values[key][lastIndex];
+                    address lastValue = curValues[lastIndex];
 
                     // Move the last value to the index where the value to delete is.
-                    sm._values[key][toDeleteIndex] = lastValue;
+                    curValues[toDeleteIndex] = lastValue;
 
                     /// @solidity memory-safe-assembly
                     assembly {
@@ -79,7 +81,7 @@ library EnumerableAddressSetMap {
                     }
                 }
                 // Delete the slot where the moved value was stored
-                sm._values[key].pop();
+                curValues.pop();
 
                 /// @solidity memory-safe-assembly
                 assembly {
