@@ -200,7 +200,7 @@ contract PreApproveRegistryTest is TestPlus {
     }
 
     function _randomAccount() internal returns (address a) {
-        a = vm.addr(_random());
+        a = address(uint160(_random() | (1 << 128)));
         vm.deal(a, 1 << 128);
     }
 }
