@@ -28,7 +28,7 @@ contract PreApproveRegistryTest is TestPlus {
         uint256 startDelay;
     }
 
-    function setUp() public {
+    function setUp() public virtual {
         registry = new PreApproveRegistry();
     }
 
