@@ -270,10 +270,10 @@ contract PreApproveRegistry {
     /**
      * @dev Returns whether the `operator` can manage NFTs on the behalf
      *      of `collector` if `collector` is subscribed to `lister`.
-     * @param operator The account that can manage NFTs on behalf of
-     *                 collectors subscribed to `lister`.
+     * @param operator  The account that can manage NFTs on behalf of
+     *                  collectors subscribed to `lister`.
      * @param collector The NFT collector using the registry.
-     * @param lister The maintainer of the pre-approve list.
+     * @param lister    The maintainer of the pre-approve list.
      * @return Whether `operator` is effectively pre-approved.
      */
     function isPreApproved(address operator, address collector, address lister)
