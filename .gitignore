@@ -25,3 +25,6 @@ broadcast
 
 # Coverage
 lcov.info
+
+# Registry build files
+/registry
