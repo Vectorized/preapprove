@@ -9,16 +9,35 @@ pragma solidity ^0.8.4;
  *         https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol
  */
 library EnumerableAddressSetMap {
+    // =============================================================
+    //                            STRUCTS
+    // =============================================================
+
+    /**
+     * @dev A storage mapping of enumerable address sets.
+     */
     struct Map {
+        // Mapping of keys to the values of the enumerable address sets.
         mapping(address => address[]) _values;
     }
 
-    function add(Map storage sm, address key, address value) internal {
-        if (!contains(sm, key, value)) {
-            address[] storage curValues = sm._values[key];
-            curValues.push(value);
+    // =============================================================
+    //                        WRITE FUNCTIONS
+    // =============================================================
 
-            uint256 n = curValues.length;
+    /**
+     * @dev Adds `value` into the enumerable address set at `key` to `map`.
+     *      Does not revert if the `value` exists.
+     * @param map   The mapping of enumerable address sets.
+     * @param key   The key into the mapping.
+     * @param value The value to add.
+     */
+    function add(Map storage map, address key, address value) internal {
+        if (!contains(map, key, value)) {
+            address[] storage currValues = map._values[key];
+            currValues.push(value);
+
+            uint256 n = currValues.length;
 
             /// @solidity memory-safe-assembly
             assembly {
@@ -27,14 +46,21 @@ library EnumerableAddressSetMap {
                 // Equivalent to:
                 // `_indexes[key][value] = n`.
                 mstore(0x20, value)
-                mstore(0x0c, sm.slot)
+                mstore(0x0c, map.slot)
                 mstore(returndatasize(), key)
                 sstore(keccak256(0x0c, 0x34), n)
             }
         }
     }
 
-    function remove(Map storage sm, address key, address value) internal {
+    /**
+     * @dev Removes `value` into the enumerable address set at `key` to `map`.
+     *      Does not revert if the `value` does not exist.
+     * @param map   The mapping of enumerable address sets.
+     * @param key   The key into the mapping.
+     * @param value The value to remove.
+     */
+    function remove(Map storage map, address key, address value) internal {
         // We read and store the value's index to prevent multiple reads from the same storage slot
         uint256 valueIndex;
         uint256 valueSlot;
@@ -45,28 +71,28 @@ library EnumerableAddressSetMap {
             // Equivalent to:
             // `valueIndex = _indexes[key][value]`.
             mstore(0x20, value)
-            mstore(0x0c, sm.slot)
+            mstore(0x0c, map.slot)
             mstore(returndatasize(), key)
             valueSlot := keccak256(0x0c, 0x34)
             valueIndex := sload(valueSlot)
         }
 
         if (valueIndex != 0) {
-            // Equivalent to contains(sm, value)
+            // Equivalent to contains(map, value)
             // To delete an element from the _values array in O(1),
             // we swap the element to delete with the last one in
             // the array, and then remove the last element (sometimes called as 'swap and pop').
             // This modifies the order of the array, as noted in {at}.
             unchecked {
+                address[] storage currValues = map._values[key];
+                uint256 lastIndex = currValues.length - 1;
                 uint256 toDeleteIndex = valueIndex - 1;
-                address[] storage curValues = sm._values[key];
-                uint256 lastIndex = curValues.length - 1;
 
                 if (lastIndex != toDeleteIndex) {
-                    address lastValue = curValues[lastIndex];
+                    address lastValue = currValues[lastIndex];
 
                     // Move the last value to the index where the value to delete is.
-                    curValues[toDeleteIndex] = lastValue;
+                    currValues[toDeleteIndex] = lastValue;
 
                     /// @solidity memory-safe-assembly
                     assembly {
@@ -74,14 +100,14 @@ library EnumerableAddressSetMap {
                         // Equivalent to:
                         // `_indexes[key][lastValue] = valueIndex`.
                         mstore(0x20, lastValue)
-                        mstore(0x0c, sm.slot)
+                        mstore(0x0c, map.slot)
                         mstore(returndatasize(), key)
                         // Replace lastValue's index to valueIndex
                         sstore(keccak256(0x0c, 0x34), valueIndex)
                     }
                 }
                 // Delete the slot where the moved value was stored
-                curValues.pop();
+                currValues.pop();
 
                 /// @solidity memory-safe-assembly
                 assembly {
@@ -94,7 +120,19 @@ library EnumerableAddressSetMap {
         }
     }
 
-    function contains(Map storage sm, address key, address value)
+    // =============================================================
+    //                        VIEW FUNCTIONS
+    // =============================================================
+
+    /**
+     * @dev Returns whether `value` is in the enumerable address set
+     *      at `key` in `map`.
+     * @param map   The mapping of enumerable address sets.
+     * @param key   The key into the mapping.
+     * @param value The value to check.
+     * @return result The result.
+     */
+    function contains(Map storage map, address key, address value)
         internal
         view
         returns (bool result)
@@ -106,21 +144,43 @@ library EnumerableAddressSetMap {
             // Equivalent to:
             // `result = _indexes[key][lastValue] != 0`.
             mstore(0x20, value)
-            mstore(0x0c, sm.slot)
+            mstore(0x0c, map.slot)
             mstore(returndatasize(), key)
             result := iszero(iszero(sload(keccak256(0x0c, 0x34))))
         }
     }
 
-    function length(Map storage sm, address key) internal view returns (uint256) {
-        return sm._values[key].length;
+    /**
+     * @dev Returns the length of the enumerable address set
+     *      at `key` in `map`.
+     * @param map The mapping of enumerable address sets.
+     * @param key The key into the mapping.
+     * @return The length.
+     */
+    function length(Map storage map, address key) internal view returns (uint256) {
+        return map._values[key].length;
     }
 
-    function at(Map storage sm, address key, uint256 index) internal view returns (address) {
-        return sm._values[key][index];
+    /**
+     * @dev Returns the value at `index` of the enumerable address set
+     *      at `key` in `map`.
+     * @param map   The mapping of enumerable address sets.
+     * @param key   The key into the mapping.
+     * @param index The index of the enumerable address set.
+     * @return The value.
+     */
+    function at(Map storage map, address key, uint256 index) internal view returns (address) {
+        return map._values[key][index];
     }
 
-    function values(Map storage sm, address key) internal view returns (address[] memory) {
-        return sm._values[key];
+    /**
+     * @dev Returns all the values of the enumerable address set
+     *      at `key` in `map`.
+     * @param map The mapping of enumerable address sets.
+     * @param key The key into the mapping.
+     * @return The values.
+     */
+    function values(Map storage map, address key) internal view returns (address[] memory) {
+        return map._values[key];
     }
 }
