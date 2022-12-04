@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "./PreApproveRegistryVanity.t.sol";
+import "./PreApproveVanity.t.sol";
 import {PreApproveChecker} from "../src/PreApproveChecker.sol";
 
-contract PreApproveCheckerTest is PreApproveRegistryVanityTest {
+contract PreApproveCheckerTest is PreApproveVanityTest {
     function testCheckIsPreApproved(uint256) public {
         TestVars memory v = _testVars(1);
         assertEq(PreApproveChecker.isPreApproved(v.operator, v.collector, v.lister), false);

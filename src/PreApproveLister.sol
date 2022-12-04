@@ -10,22 +10,22 @@ import "solady/auth/Ownable.sol";
  */
 contract PreApproveLister is Ownable {
     /**
-     * @dev Whether the contract has already been initialized.
-     */
-    bool initialized;
-
-    /**
      * @dev The address of the pre-approve registry.
      */
-    address internal constant PRE_APPROVE_REGISTRY = 0x00000000000649D9ec3d61D86c69a62580E6f096;
+    address internal constant _PRE_APPROVE_REGISTRY = 0x00000000000649D9ec3d61D86c69a62580E6f096;
+
+    /**
+     * @dev Whether the contract has already been initialized.
+     */
+    bool internal _initialized;
 
     /**
      * @dev Initializer.
      */
-    function initialize() external payable {
-        require(!initialized);
-        _initializeOwner(msg.sender);
-        initialized = true;
+    function initialize(address initialOwner) external payable {
+        require(!_initialized);
+        _initializeOwner(initialOwner);
+        _initialized = true;
     }
 
     /**
@@ -34,7 +34,24 @@ contract PreApproveLister is Ownable {
      *                 collectors subscribed to the caller.
      */
     function addOperator(address operator) external payable onlyOwner {
-        _addOrRemoveOperator(operator);
+        /// @solidity memory-safe-assembly
+        assembly {
+            // Store the function selector.
+            mstore(returndatasize(), calldataload(returndatasize()))
+            // Store the operator.
+            mstore(0x04, operator)
+            pop(
+                call(
+                    gas(), // Remaining gas.
+                    _PRE_APPROVE_REGISTRY, // The pre-approve registry.
+                    returndatasize(), // Send 0 ETH.
+                    returndatasize(), // Start of calldata.
+                    0x24, // Length of calldata.
+                    returndatasize(), // Start of returndata in memory.
+                    returndatasize() // Length of returndata.
+                )
+            )
+        }
     }
 
     /**
@@ -43,29 +60,21 @@ contract PreApproveLister is Ownable {
      *                 collectors subscribed to the caller.
      */
     function removeOperator(address operator) external payable onlyOwner {
-        _addOrRemoveOperator(operator);
-    }
-
-    /**
-     * @dev Allows the owner to add or remove the `operator`,
-     *      depending on the calldata function selector.
-     * @param operator The account that can manage NFTs on behalf of
-     *                 collectors subscribed to the caller.
-     */
-    function _addOrRemoveOperator(address operator) internal {
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x00, calldataload(0x00)) // Store the function selector.
-            mstore(0x04, operator) // Store the operator.
+            // Store the function selector.
+            mstore(returndatasize(), calldataload(returndatasize()))
+            // Store the operator.
+            mstore(0x04, operator)
             pop(
                 call(
                     gas(), // Remaining gas.
-                    PRE_APPROVE_REGISTRY, // The pre-approve registry.
-                    0, // Send 0 ETH.
-                    0x00, // Start of calldata.
+                    _PRE_APPROVE_REGISTRY, // The pre-approve registry.
+                    returndatasize(), // Send 0 ETH.
+                    returndatasize(), // Start of calldata.
                     0x24, // Length of calldata.
-                    0x00, // Start of returndata in memory.
-                    0x00 // Length of returndata.
+                    returndatasize(), // Start of returndata in memory.
+                    returndatasize() // Length of returndata.
                 )
             )
         }
