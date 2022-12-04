@@ -14,7 +14,7 @@ fs.writeFileSync(
 
 node .tmp/replace_imports.js;
 
-forge build --out="out" --root=".tmp" --contracts="." --optimize --optimizer-runs=200 --use=0.8.17;
+forge build --out="out" --root=".tmp" --contracts="." --via-ir --optimize --optimizer-runs=200 --use=0.8.17;
 
 mkdir factory > /dev/null 2>&1;
 
@@ -46,6 +46,7 @@ fs.writeFileSync(
                 "enabled": true,
                 "runs": 200
             },
+            "viaIR": true,
             "outputSelection": {
                 "*": {
                     "*": [
@@ -89,4 +90,3 @@ node .tmp/generate_initcodehash.js;
 
 rm -r .tmp/*.js > /dev/null 2>&1;
 rm -r .tmp/*.sol > /dev/null 2>&1;
-
