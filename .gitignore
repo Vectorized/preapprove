@@ -26,5 +26,7 @@ broadcast
 # Coverage
 lcov.info
 
-# Registry build files
+# Build files for CREATE2 deployments
 /registry
+/lister
+/factory

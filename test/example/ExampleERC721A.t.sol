@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "../PreApproveRegistryVanity.t.sol";
+import "../PreApproveVanity.t.sol";
 import {PreApproveLister} from "../../src/PreApproveLister.sol";
 import {ExampleERC721A} from "../../src/example/ExampleERC721A.sol";
 import "solady/utils/LibClone.sol";
@@ -12,11 +12,11 @@ contract TestableExampleERC721A is ExampleERC721A {
     }
 }
 
-contract PreApproveListerTest is PreApproveRegistryVanityTest {
+contract PreApproveListerTest is PreApproveVanityTest {
     error TransferCallerNotOwnerNorApproved();
 
     TestableExampleERC721A example;
-    PreApproveLister listerProxy;
+    PreApproveLister lister;
 
     function setUp() public override {
         super.setUp();
@@ -25,15 +25,15 @@ contract PreApproveListerTest is PreApproveRegistryVanityTest {
         PreApproveLister implementation = new PreApproveLister();
         address clone = LibClone.clone(address(implementation));
         vm.etch(example.PRE_APPROVE_LISTER(), clone.code);
-        listerProxy = PreApproveLister(example.PRE_APPROVE_LISTER());
-        listerProxy.initialize();
+        lister = PreApproveLister(example.PRE_APPROVE_LISTER());
+        lister.initialize(address(this));
     }
 
     function testTransfer(uint256) public {
         TestVars memory v = _testVars(1);
         vm.assume(v.operator != v.collector);
 
-        v.lister = address(listerProxy);
+        v.lister = address(lister);
 
         example.mint(v.collector, 1);
 
@@ -42,7 +42,7 @@ contract PreApproveListerTest is PreApproveRegistryVanityTest {
         vm.expectRevert(TransferCallerNotOwnerNorApproved.selector);
         example.transferFrom(v.collector, address(this), 0);
 
-        listerProxy.addOperator(v.operator);
+        lister.addOperator(v.operator);
 
         assertEq(example.isApprovedForAll(v.collector, v.operator), false);
         vm.prank(v.operator);
