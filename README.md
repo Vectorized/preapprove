@@ -17,7 +17,8 @@ src
 ├─ PreApproveRegistry.sol — "The pre-approve registry"
 ├─ EnumerableAddressSetMap.sol — "Library for mapping of enumerable sets"
 ├─ PreApproveChecker.sol — "Library for querying the pre-approve registry efficiently"
-├─ PreApproveLister.sol — "Sample contract for proxied listing to the registry"
+├─ PreApproveLister.sol — "Ownable lister contract that can add/remove operators"
+├─ PreApproveListerFactory.sol — "Factory to deploy lister contracts"
 └─ example
    └─ ExampleERC721A.sol — "ERC721A example"
 ``` 
