@@ -5,7 +5,7 @@ mkdir _tmp_lister/src > /dev/null 2>&1;
 cp src/PreApproveLister.sol _tmp_lister;
 cp lib/solady/src/auth/Ownable.sol _tmp_lister;
 
-forge build --out="out" --root="_tmp_lister" --contracts="." --remappings="solady/auth/=." --via-ir --optimize --optimizer-runs=200 --use=0.8.17;
+forge build --out="out" --root="_tmp_lister" --contracts="." --remappings="solady/auth/=." --via-ir --optimize --optimizer-runs=200 --use=0.8.17 --build-info --build-info-path="info";
 
 mkdir lister > /dev/null 2>&1;
 
@@ -33,6 +33,9 @@ fs.writeFileSync(
             },
         },
         "settings": {
+            "remappings": [
+                "solady/auth/=/"
+            ],
             "optimizer": {
                 "enabled": true,
                 "runs": 200

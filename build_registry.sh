@@ -33,6 +33,9 @@ fs.writeFileSync(
             },
         },
         "settings": {
+            "remappings": [
+                "solady/utils/=/"
+            ],
             "optimizer": {
                 "enabled": true,
                 "runs": 1000000
