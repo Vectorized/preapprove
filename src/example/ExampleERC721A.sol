@@ -10,6 +10,11 @@ import "../PreApproveChecker.sol";
  *         `isApprovedForAll` function to query the pre-approve registry.
  */
 contract ExampleERC721A is ERC721A {
+    /**
+     * @dev For best gas performance, this should be a hardcoded constant.
+     *      You can either set it to the EOA you use to list/remove operators,
+     *      or an proxy that allows the owner to list/remove operators.
+     */
     address public constant PRE_APPROVE_LISTER = 0x0123456789012345678901234567890123456789;
 
     constructor() ERC721A("Example", "EXAMPLE") {}
