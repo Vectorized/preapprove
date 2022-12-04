@@ -1,11 +1,20 @@
-rm -r _tmp_factory > /dev/null 2>&1;
-mkdir _tmp_factory > /dev/null 2>&1;
-mkdir _tmp_factory/src > /dev/null 2>&1;
+mkdir .tmp > /dev/null 2>&1;
 
-cp src/PreApproveListerFactory.sol _tmp_factory;
-cp lib/solady/src/utils/LibClone.sol _tmp_factory;
+cp src/PreApproveListerFactory.sol .tmp;
+cp lib/solady/src/utils/LibClone.sol .tmp;
 
-forge build --out="out" --root="_tmp_factory" --contracts="." --remappings="solady/utils/=." --via-ir --optimize --optimizer-runs=200 --use=0.8.17;
+echo '
+const fs = require("fs");
+const p = ".tmp/PreApproveListerFactory.sol";
+fs.writeFileSync(
+    p, 
+    fs.readFileSync(p, { encoding: "utf8", flag: "r" })
+    .replace(/import\s*?\"solady\/utils\/LibClone\.sol\"/, "import \"./LibClone.sol\"")
+);' > .tmp/replace_imports.js;
+
+node .tmp/replace_imports.js;
+
+forge build --out="out" --root=".tmp" --contracts="." --via-ir --optimize --optimizer-runs=200 --use=0.8.17;
 
 mkdir factory > /dev/null 2>&1;
 
@@ -13,10 +22,10 @@ echo '
 const fs = require("fs");
 fs.writeFileSync(
     "factory/initcode.txt", 
-    JSON.parse(fs.readFileSync("_tmp_factory/out/PreApproveListerFactory.sol/PreApproveListerFactory.json", { encoding: "utf8", flag: "r" }))["bytecode"]["object"].slice(2)
-);' > _tmp_factory/extract_initcode.js;
+    JSON.parse(fs.readFileSync(".tmp/out/PreApproveListerFactory.sol/PreApproveListerFactory.json", { encoding: "utf8", flag: "r" }))["bytecode"]["object"].slice(2)
+);' > .tmp/extract_initcode.js;
 
-node _tmp_factory/extract_initcode.js;
+node .tmp/extract_initcode.js;
 
 echo '
 const fs = require("fs");
@@ -26,10 +35,10 @@ fs.writeFileSync(
         "language": "Solidity",
         "sources": {
             "PreApproveListerFactory.sol": {
-                "content": fs.readFileSync("_tmp_factory/PreApproveListerFactory.sol", { encoding: "utf8", flag: "r" })
+                "content": fs.readFileSync(".tmp/PreApproveListerFactory.sol", { encoding: "utf8", flag: "r" })
             },
             "LibClone.sol": {
-                "content": fs.readFileSync("_tmp_factory/LibClone.sol", { encoding: "utf8", flag: "r" })
+                "content": fs.readFileSync(".tmp/LibClone.sol", { encoding: "utf8", flag: "r" })
             },
         },
         "settings": {
@@ -37,6 +46,7 @@ fs.writeFileSync(
                 "enabled": true,
                 "runs": 200
             },
+            "viaIR": true,
             "outputSelection": {
                 "*": {
                     "*": [
@@ -48,9 +58,9 @@ fs.writeFileSync(
             }
         }
     })
-);' > _tmp_factory/generate_input_json.js;
+);' > .tmp/generate_input_json.js;
 
-node _tmp_factory/generate_input_json.js;
+node .tmp/generate_input_json.js;
 
 echo '{
     "name": "",
@@ -59,11 +69,13 @@ echo '{
     "devDependencies": {
         "ethers": "^5.7.2"
     }
-}' > _tmp_factory/package.json;
+}' > .tmp/package.json;
 
-cd _tmp_factory;
-npm install; 
-cd ..;
+if [ ! -f .tmp/package-lock.json ]; then
+    cd .tmp;
+    npm install; 
+    cd ..;
+fi
 
 echo '
 const fs = require("fs");
@@ -71,9 +83,10 @@ const ethers = require("ethers");
 fs.writeFileSync(
     "factory/initcodehash.txt", 
     ethers.utils.keccak256("0x" + fs.readFileSync("factory/initcode.txt", { encoding: "utf8", flag: "r" }))
-);' > _tmp_factory/generate_initcodehash.js;
+);' > .tmp/generate_initcodehash.js;
 
 
-node _tmp_factory/generate_initcodehash.js;
+node .tmp/generate_initcodehash.js;
 
-rm -r _tmp_factory > /dev/null 2>&1;
+rm -r .tmp/*.js > /dev/null 2>&1;
+rm -r .tmp/*.sol > /dev/null 2>&1;
