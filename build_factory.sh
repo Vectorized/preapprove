@@ -11,6 +11,10 @@ fs.writeFileSync(
 )' > .tmp/replace_imports.js;
 node .tmp/replace_imports.js;
 
+echo '[profile.default]
+bytecode_hash="none"
+' > .tmp/foundry.toml;
+
 forge build --out="out" --root=".tmp" --contracts="." --via-ir --optimize --optimizer-runs=200 --use=0.8.17;
 
 mkdir factory > /dev/null 2>&1;
@@ -36,6 +40,7 @@ fs.writeFileSync(
             },
         },
         "settings": {
+            "metadata": { "bytecodeHash": "none" },
             "optimizer": { "enabled": true, "runs": 200 },
             "viaIR": true,
             "outputSelection": { "*": { "*": [ "evm.bytecode", "evm.deployedBytecode", "abi" ] } }

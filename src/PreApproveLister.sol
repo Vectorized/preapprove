@@ -12,7 +12,7 @@ contract PreApproveLister is Ownable {
     /**
      * @dev The address of the pre-approve registry.
      */
-    address internal constant _PRE_APPROVE_REGISTRY = 0x00000000000649D9ec3d61D86c69a62580E6f096;
+    address internal constant _PRE_APPROVE_REGISTRY = 0x0000000000226f375D7bb7077c63330b60737F9b;
 
     /**
      * @dev Whether the contract has already been initialized.
