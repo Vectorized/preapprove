@@ -31,6 +31,8 @@ contract PreApproveListerTest is PreApproveVanityTest {
 
     function testTransfer(uint256) public {
         TestVars memory v = _testVars(1);
+        vm.assume(v.operator != address(0));
+        vm.assume(v.collector != address(0));
         vm.assume(v.operator != v.collector);
 
         v.lister = address(lister);

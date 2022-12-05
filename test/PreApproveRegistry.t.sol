@@ -178,29 +178,28 @@ contract PreApproveRegistryTest is TestPlus {
         assertEq(registry.subscriptions(v.collector), new address[](0));
     }
 
-    function _testVars(uint256 n) internal returns (TestVars memory v) {
+    function _testVars(uint256 n) internal view returns (TestVars memory v) {
         v.listers = _randomAccounts(n);
         v.operators = _randomAccounts(n);
         v.collectors = _randomAccounts(n);
-        v.lister = v.listers[_random() % n];
-        v.operator = v.operators[_random() % n];
-        v.collector = v.collectors[_random() % n];
+        v.lister = v.listers[_random() % v.listers.length];
+        v.operator = v.operators[_random() % v.operators.length];
+        v.collector = v.collectors[_random() % v.collectors.length];
         v.startDelay = registry.START_DELAY();
     }
 
-    function _randomAccounts(uint256 n) internal returns (address[] memory a) {
+    function _randomAccounts(uint256 n) internal view returns (address[] memory a) {
         a = new address[](n);
         unchecked {
             for (uint256 i; i != n; ++i) {
-                a[i] = _randomAccount();
+                if (_random() % 8 == 0) {
+                    a[i] = address(uint160(((_random() % 4) << 128)));
+                } else {
+                    a[i] = address(uint160(_random() | (1 << 128)));
+                }
             }
         }
         LibSort.insertionSort(a);
         LibSort.uniquifySorted(a);
-    }
-
-    function _randomAccount() internal returns (address a) {
-        a = address(uint160(_random() | (1 << 128)));
-        vm.deal(a, 1 << 128);
     }
 }
