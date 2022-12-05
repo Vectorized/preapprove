@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 /**
  * @title PreApproveChecker
  * @notice A library for checking whether an operator is pre-approved
- *         by a lister subcribed to by a collector.
+ *         by a lister subscribed to by a collector.
  */
 library PreApproveChecker {
     /**

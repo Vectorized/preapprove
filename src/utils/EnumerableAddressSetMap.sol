@@ -2,9 +2,11 @@
 pragma solidity ^0.8.4;
 
 /**
- * @title PreApproveRegistry
+ * @title EnumerableAddressSetMap
  * @notice This library enumlates a `mapping(address => EnumerableSet.AddressSet())`.
- *         For gas savings, we shall use `returndatasize()` as a replacement for 0.
+ *         It is specifically made for the PreApproveRegistry.
+ *         For gas savings, we shall use `returndatasize()` as a replacement for 0,
+ *         which is only suitable for contracts that without calls or staticcalls.
  *         Modified from OpenZeppelin's EnumerableSet (MIT Licensed).
  *         https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol
  */
