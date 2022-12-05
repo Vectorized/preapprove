@@ -47,7 +47,9 @@ src
 
 - NFT Contracts
 
-  ERC721 or ERC1155 compliant contracts that can override `isApprovedForAll(address collector, address operator)` to consult the registry to check if the operator is pre-approved by a specified lister which the collector is subscribed to.
+  ERC721 or ERC1155 compliant contracts that can override  
+  `isApprovedForAll(address collector, address operator)` to consult the registry,  
+  returning true if the operator is pre-approved by the specified lister which the collector is subscribed to.
 
 - Registry
 
