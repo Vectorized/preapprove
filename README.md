@@ -19,7 +19,7 @@ src
 ├─ PreApproveListerFactory.sol — "Factory to deploy lister contracts"
 ├─ PreApproveRegistry.sol — "The pre-approve registry"
 ├─ example
-|  └─ ExampleERC721A.sol — "ERC721A example"
+│  └─ ExampleERC721A.sol — "ERC721A example"
 └─ utils
    └─ EnumerableAddressSetMap.sol — "Library for mapping of enumerable sets"
 ``` 
