@@ -69,7 +69,11 @@ contract EnumerableAddressSetMapTest is TestPlus {
         a = new address[](n);
         unchecked {
             for (uint256 i; i != n; ++i) {
-                a[i] = address(uint160(_random() | (1 << 128)));
+                if (_random() % 8 == 0) {
+                    a[i] = address(uint160(((_random() & 1) << 128)));
+                } else {
+                    a[i] = address(uint160(_random() | (1 << 128)));
+                }
             }
         }
         LibSort.insertionSort(a);
