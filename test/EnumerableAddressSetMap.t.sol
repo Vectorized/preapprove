@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "./utils/TestPlus.sol";
 import "solady/utils/LibSort.sol";
-import {EnumerableAddressSetMap} from "../src/EnumerableAddressSetMap.sol";
+import {EnumerableAddressSetMap} from "../src/utils/EnumerableAddressSetMap.sol";
 import {EnumerableSet} from "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 
 contract EnumerableAddressSetMapTest is TestPlus {

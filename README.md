@@ -14,13 +14,14 @@ THIS CODEBASE IS STILL UNDER CONSTRUCTION. PLEASE DO NOT USE YET.
 
 ```ml
 src
-├─ PreApproveRegistry.sol — "The pre-approve registry"
-├─ EnumerableAddressSetMap.sol — "Library for mapping of enumerable sets"
 ├─ PreApproveChecker.sol — "Library for querying the pre-approve registry efficiently"
 ├─ PreApproveLister.sol — "Ownable lister contract that can add/remove operators"
 ├─ PreApproveListerFactory.sol — "Factory to deploy lister contracts"
-└─ example
-   └─ ExampleERC721A.sol — "ERC721A example"
+├─ PreApproveRegistry.sol — "The pre-approve registry"
+├─ example
+|  └─ ExampleERC721A.sol — "ERC721A example"
+└─ utils
+   └─ EnumerableAddressSetMap.sol — "Library for mapping of enumerable sets"
 ``` 
 
 ## Examples
