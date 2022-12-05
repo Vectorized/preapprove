@@ -193,7 +193,7 @@ contract PreApproveRegistryTest is TestPlus {
         unchecked {
             for (uint256 i; i != n; ++i) {
                 if (_random() % 8 == 0) {
-                    a[i] = address(uint160(((_random() & 1) << 128)));
+                    a[i] = address(uint160(((_random() % 4) << 128)));
                 } else {
                     a[i] = address(uint160(_random() | (1 << 128)));
                 }
