@@ -12,7 +12,7 @@ import "./utils/EnumerableAddressSetMap.sol";
  *         if the NFT contracts consult this registry on whether the operator
  *         is in the pre-approved list by lister.
  *
- *         For safety, newly added operators will need to wait some time
+ *         For safety, newly added operators will need to wait 1 week
  *         before they take effect.
  */
 contract PreApproveRegistry {
@@ -62,7 +62,8 @@ contract PreApproveRegistry {
     // =============================================================
 
     /**
-     * @dev The amount of time before a newly added `operator` becomes effective.
+     * @dev The number of seconds before a newly added `operator` becomes effective.
+     *      1 week.
      */
     uint256 public constant START_DELAY = 86400 * 7;
 
@@ -119,6 +120,7 @@ contract PreApproveRegistry {
 
     /**
      * @dev Adds the `operator` to the pre-approve list maintained by the caller (lister).
+     *      If the `operator` already exists, the start time will be updated to 1 week from now.
      * @param operator The account that can manage NFTs on behalf of
      *                 collectors subscribed to the caller.
      */
