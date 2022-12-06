@@ -4,13 +4,13 @@ pragma solidity ^0.8.4;
 /** 
  * @title PreApproveChecker 
  * @notice A library for checking whether an operator is pre-approved 
- *         by a lister subcribed to by a collector. 
+ *         by a lister subscribed to by a collector. 
  */ 
 library PreApproveChecker { 
     /** 
      * @dev The address of the pre-approve registry. 
      */ 
-    address internal constant PRE_APPROVE_REGISTRY = 0x00000000000649D9ec3d61D86c69a62580E6f096; 
+    address internal constant PRE_APPROVE_REGISTRY = 0x0000000000226f375D7bb7077c63330b60737F9b; 
  
     /** 
      * @dev Returns whether the `operator` is approved by `lister`, 

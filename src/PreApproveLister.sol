@@ -12,12 +12,17 @@ contract PreApproveLister is Ownable {
     /** 
      * @dev The address of the pre-approve registry. 
      */ 
-    address internal constant _PRE_APPROVE_REGISTRY = 0x00000000000649D9ec3d61D86c69a62580E6f096; 
+    address internal constant _PRE_APPROVE_REGISTRY = 0x0000000000226f375D7bb7077c63330b60737F9b; 
  
     /** 
      * @dev Whether the contract has already been initialized. 
      */ 
     bool internal _initialized; 
+ 
+    /** 
+     * @dev Payable constructor for smaller deployment. 
+     */ 
+    constructor() payable {} 
  
     /** 
      * @dev Initializer. 
@@ -36,11 +41,11 @@ contract PreApproveLister is Ownable {
     function addOperator(address operator) external payable onlyOwner { 
         /// @solidity memory-safe-assembly 
         assembly { 
-            // Store the function selector. 
-            mstore(returndatasize(), calldataload(returndatasize())) 
-            // Store the operator. 
-            mstore(0x04, operator) 
-            pop( 
+            // Silence compiler warning on unused variable. 
+            let t := operator 
+            // Copy over the function selector and the operator to memory. 
+            calldatacopy(returndatasize(), returndatasize(), 0x24) 
+            if iszero( 
                 call( 
                     gas(), // Remaining gas. 
                     _PRE_APPROVE_REGISTRY, // The pre-approve registry. 
@@ -50,7 +55,10 @@ contract PreApproveLister is Ownable {
                     returndatasize(), // Start of returndata in memory. 
                     returndatasize() // Length of returndata. 
                 ) 
-            ) 
+            ) { 
+                // This is to prevent gas under-estimation. 
+                revert(0, 0) 
+            } 
         } 
     } 
  
@@ -62,11 +70,11 @@ contract PreApproveLister is Ownable {
     function removeOperator(address operator) external payable onlyOwner { 
         /// @solidity memory-safe-assembly 
         assembly { 
-            // Store the function selector. 
-            mstore(returndatasize(), calldataload(returndatasize())) 
-            // Store the operator. 
-            mstore(0x04, operator) 
-            pop( 
+            // Silence compiler warning on unused variable. 
+            let t := operator 
+            // Copy over the function selector and the operator to memory. 
+            calldatacopy(returndatasize(), returndatasize(), 0x24) 
+            if iszero( 
                 call( 
                     gas(), // Remaining gas. 
                     _PRE_APPROVE_REGISTRY, // The pre-approve registry. 
@@ -76,7 +84,10 @@ contract PreApproveLister is Ownable {
                     returndatasize(), // Start of returndata in memory. 
                     returndatasize() // Length of returndata. 
                 ) 
-            ) 
+            ) { 
+                // This is to prevent gas under-estimation. 
+                revert(0, 0) 
+            } 
         } 
     } 
 } 

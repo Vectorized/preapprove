@@ -100,7 +100,7 @@ contract PreApproveRegistry {
     // ============================================================= 
  
     /** 
-     * @dev Subscribes the caller (collector) from `lister`. 
+     * @dev Subscribes the caller (collector) to `lister`. 
      * @param lister The maintainer of the pre-approve list. 
      */ 
     function subscribe(address lister) external payable { 
