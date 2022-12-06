@@ -20,6 +20,11 @@ contract PreApproveLister is Ownable {
     bool internal _initialized;
 
     /**
+     * @dev Payable constructor for smaller deployment.
+     */
+    constructor() payable {}
+
+    /**
      * @dev Initializer.
      */
     function initialize(address initialOwner) external payable {

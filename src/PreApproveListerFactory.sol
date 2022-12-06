@@ -12,7 +12,12 @@ contract PreApproveListerFactory {
      * @dev The address of the pre-approve lister implementation.
      */
     address internal constant _PRE_APPROVE_LISTER_IMPLMENTATION =
-        0x00000000150203eA2eBA41ce0a001067498cDAc3;
+        0x00000000f69DcfF7d97c7a592F6246A6d3db3f6c;
+
+    /**
+     * @dev Payable constructor for smaller deployment.
+     */
+    constructor() payable {}
 
     /**
      * @dev Deploys a lister, with `initialOwner` as the owner, and returns the address.
@@ -27,7 +32,7 @@ contract PreApproveListerFactory {
             // `bytes4(keccak256("initialize(address)"))`
             mstore(returndatasize(), 0xc4d66de8)
             mstore(0x20, initialOwner)
-            pop(
+            if iszero(
                 call(
                     gas(), // Remaining gas.
                     lister, // Address of the newly created lister.
@@ -37,7 +42,10 @@ contract PreApproveListerFactory {
                     returndatasize(), // Start of returndata in memory.
                     returndatasize() // Length of returndata.
                 )
-            )
+            ) {
+                // This is to prevent gas under-estimation.
+                revert(0, 0)
+            }
         }
     }
 }
