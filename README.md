@@ -12,9 +12,7 @@ On-chain registry for pre-approvals of ERC721 transfers.
 
 | Chain | PreApproveRegistry | PreApproveListerFactory |
 |---|---|---|
-| Goerli 
-| [`0x00000000000044dfA889ebC2C5103067Ec23332f`](https://goerli.etherscan.io/address/0x00000000000044dfA889ebC2C5103067Ec23332f) 
-| [`0x000000008eD362F72783dEEf4B485761b4909e53`](https://goerli.etherscan.io/address/0x000000008eD362F72783dEEf4B485761b4909e53) |
+| Goerli | [`0x00000000000044dfA889ebC2C5103067Ec23332f`](https://goerli.etherscan.io/address/0x00000000000044dfA889ebC2C5103067Ec23332f) | [`0x000000008eD362F72783dEEf4B485761b4909e53`](https://goerli.etherscan.io/address/0x000000008eD362F72783dEEf4B485761b4909e53) |
 
 ## Contracts
 
