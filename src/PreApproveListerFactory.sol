@@ -11,8 +11,8 @@ contract PreApproveListerFactory {
     /**
      * @dev The address of the pre-approve lister implementation.
      */
-    address internal constant _PRE_APPROVE_LISTER_IMPLMENTATION =
-        0x00000000Ad5E9a80B6beEAaaB4c3BdCE2c3318dB;
+    address public constant PRE_APPROVE_LISTER_IMPLMENTATION =
+        0x0000000056D9B916b751a45E236B4A0B74748511;
 
     /**
      * @dev Payable constructor for smaller deployment.
@@ -25,7 +25,7 @@ contract PreApproveListerFactory {
      * @return lister The address of the deployed lister.
      */
     function deploy(address initialOwner) external payable returns (address lister) {
-        lister = LibClone.clone(_PRE_APPROVE_LISTER_IMPLMENTATION);
+        lister = LibClone.clone(PRE_APPROVE_LISTER_IMPLMENTATION);
         _initializeInitialOwner(lister, initialOwner);
     }
 
@@ -43,8 +43,19 @@ contract PreApproveListerFactory {
     {
         // Require that the salt starts with either the zero address or the caller.
         LibClone.checkStartsWithCaller(salt);
-        lister = LibClone.cloneDeterministic(_PRE_APPROVE_LISTER_IMPLMENTATION, salt);
+        lister = LibClone.cloneDeterministic(PRE_APPROVE_LISTER_IMPLMENTATION, salt);
         _initializeInitialOwner(lister, initialOwner);
+    }
+
+    /**
+     * @dev Returns the deterministic address which the lister will be deployed at with `salt`.
+     * @param salt The CREATE2 salt.
+     * @return lister The predicted address of the lister.
+     */
+    function predictDeterministicAddress(bytes32 salt) external view returns (address lister) {
+        lister = LibClone.predictDeterministicAddress(
+            PRE_APPROVE_LISTER_IMPLMENTATION, salt, address(this)
+        );
     }
 
     /**
@@ -53,18 +64,7 @@ contract PreApproveListerFactory {
      * @return hash The constant value.
      */
     function initCodeHash() external pure returns (bytes32 hash) {
-        hash = LibClone.initCodeHash(_PRE_APPROVE_LISTER_IMPLMENTATION);
-    }
-
-    /**
-     * @dev Returns the predicted deterministic address which the lister will be deployed to with `salt.
-     * @param salt The CREATE2 salt.
-     * @return lister The address of the lister.
-     */
-    function predictDeterministicAddress(bytes32 salt) external view returns (address lister) {
-        lister = LibClone.predictDeterministicAddress(
-            _PRE_APPROVE_LISTER_IMPLMENTATION, salt, address(this)
-        );
+        hash = LibClone.initCodeHash(PRE_APPROVE_LISTER_IMPLMENTATION);
     }
 
     /**

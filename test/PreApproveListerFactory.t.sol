@@ -11,9 +11,9 @@ contract PreApproveListerFactoryTest is PreApproveVanityTest {
         PreApproveListerFactory factory = new PreApproveListerFactory();
         address predictedAddress = factory.predictDeterministicAddress(salt);
 
-        bytes32 h =
-            keccak256(abi.encodePacked(hex"ff", address(factory), salt, factory.initCodeHash()));
-        assertEq(predictedAddress, address(uint160(uint256(h))));
+        bytes32 hash = factory.initCodeHash();
+        hash = keccak256(abi.encodePacked(hex"ff", address(factory), salt, hash));
+        assertEq(predictedAddress, address(uint160(uint256(hash))));
 
         address actualAddress = factory.deployDeterministic(address(this), salt);
         assertEq(predictedAddress, actualAddress);
