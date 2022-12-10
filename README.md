@@ -4,7 +4,7 @@ On-chain registry for pre-approvals of ERC721 transfers.
 
 > **Warning**
 >
-> This code base is still under heavy construction. Please do not use yet.
+> This codebase is still under heavy construction. Please do not use yet.
 
 ## Deployments
 
