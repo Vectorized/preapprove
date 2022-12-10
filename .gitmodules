@@ -7,15 +7,19 @@
 [submodule "lib/operator-filter-registry"]
 	path = lib/operator-filter-registry
 	url = https://github.com/ProjectOpenSea/operator-filter-registry
+	branch = main
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
 [submodule "lib/erc721a"]
 	path = lib/erc721a
 	url = https://github.com/chiru-labs/erc721a
+	branch = main
 [submodule "lib/erc721a-upgradeable"]
 	path = lib/erc721a-upgradeable
 	url = https://github.com/chiru-labs/erc721a-upgradeable
+	branch = main
 [submodule "lib/solady"]
 	path = lib/solady
 	url = https://github.com/vectorized/solady
+	branch = main

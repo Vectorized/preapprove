@@ -10,7 +10,7 @@ library PreApproveChecker {
     /**
      * @dev The address of the pre-approve registry.
      */
-    address internal constant PRE_APPROVE_REGISTRY = 0x0000000000226f375D7bb7077c63330b60737F9b;
+    address internal constant PRE_APPROVE_REGISTRY = 0x00000000000044dfA889ebC2C5103067Ec23332f;
 
     /**
      * @dev Returns whether the `operator` is approved by `lister`,
