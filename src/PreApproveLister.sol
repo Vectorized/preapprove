@@ -12,7 +12,7 @@ contract PreApproveLister is Ownable {
     /**
      * @dev The address of the pre-approve registry.
      */
-    address internal constant _PRE_APPROVE_REGISTRY = 0x0000000000226f375D7bb7077c63330b60737F9b;
+    address public constant PRE_APPROVE_REGISTRY = 0x00000000000044dfA889ebC2C5103067Ec23332f;
 
     /**
      * @dev Whether the contract has already been initialized.
@@ -48,7 +48,7 @@ contract PreApproveLister is Ownable {
             if iszero(
                 call(
                     gas(), // Remaining gas.
-                    _PRE_APPROVE_REGISTRY, // The pre-approve registry.
+                    PRE_APPROVE_REGISTRY, // The pre-approve registry.
                     returndatasize(), // Send 0 ETH.
                     returndatasize(), // Start of calldata.
                     0x24, // Length of calldata.
@@ -77,7 +77,7 @@ contract PreApproveLister is Ownable {
             if iszero(
                 call(
                     gas(), // Remaining gas.
-                    _PRE_APPROVE_REGISTRY, // The pre-approve registry.
+                    PRE_APPROVE_REGISTRY, // The pre-approve registry.
                     returndatasize(), // Send 0 ETH.
                     returndatasize(), // Start of calldata.
                     0x24, // Length of calldata.

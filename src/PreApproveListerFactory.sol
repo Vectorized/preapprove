@@ -11,8 +11,8 @@ contract PreApproveListerFactory {
     /**
      * @dev The address of the pre-approve lister implementation.
      */
-    address internal constant _PRE_APPROVE_LISTER_IMPLMENTATION =
-        0x0000000016a3AF8Fe127Ac55b7Be2d97e1A54b34;
+    address public constant PRE_APPROVE_LISTER_IMPLMENTATION =
+        0x00000000009B67ae8c62b36B8bdeBF507457DDbe;
 
     /**
      * @dev Payable constructor for smaller deployment.
@@ -25,7 +25,54 @@ contract PreApproveListerFactory {
      * @return lister The address of the deployed lister.
      */
     function deploy(address initialOwner) external payable returns (address lister) {
-        lister = LibClone.clone(_PRE_APPROVE_LISTER_IMPLMENTATION);
+        lister = LibClone.clone(PRE_APPROVE_LISTER_IMPLMENTATION);
+        _initializeInitialOwner(lister, initialOwner);
+    }
+
+    /**
+     * @dev Deploys a lister deterministically with `salt`,
+     *      with `initialOwner` as the owner, and returns the address.
+     * @param initialOwner The initial owner of the lister.
+     * @param salt         The CREATE2 salt used to deploy to a deterministic address.
+     * @return lister The address of the deployed lister.
+     */
+    function deployDeterministic(address initialOwner, bytes32 salt)
+        external
+        payable
+        returns (address lister)
+    {
+        // Require that the salt starts with either the zero address or the caller.
+        LibClone.checkStartsWithCaller(salt);
+        lister = LibClone.cloneDeterministic(PRE_APPROVE_LISTER_IMPLMENTATION, salt);
+        _initializeInitialOwner(lister, initialOwner);
+    }
+
+    /**
+     * @dev Returns the deterministic address which the lister will be deployed at with `salt`.
+     * @param salt The CREATE2 salt.
+     * @return lister The predicted address of the lister.
+     */
+    function predictDeterministicAddress(bytes32 salt) external view returns (address lister) {
+        lister = LibClone.predictDeterministicAddress(
+            PRE_APPROVE_LISTER_IMPLMENTATION, salt, address(this)
+        );
+    }
+
+    /**
+     * @dev Returns the initialization code hash of the lister minimal proxy clone.
+     *      Used for mining vanity address with create2crunch.
+     * @return hash The constant value.
+     */
+    function initCodeHash() external pure returns (bytes32 hash) {
+        hash = LibClone.initCodeHash(PRE_APPROVE_LISTER_IMPLMENTATION);
+    }
+
+    /**
+     * @dev Initializes the initial owner of `lister` to `initialOwner`.
+     * @param lister       The lister contract.
+     * @param initialOwner The initial owner of lister.
+     */
+    function _initializeInitialOwner(address lister, address initialOwner) internal {
         /// @solidity memory-safe-assembly
         assembly {
             // Store the function selector:

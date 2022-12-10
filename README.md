@@ -2,13 +2,19 @@
 
 On-chain registry for pre-approvals of ERC721 transfers.
 
-THIS CODEBASE IS STILL UNDER CONSTRUCTION. PLEASE DO NOT USE YET.
+Useful for pre-approving contracts in your dApp ecosystem to manage NFTs without individual approvals.
 
-<!-- ## Deployments
+> **Warning**
+>
+> **This codebase is still under heavy construction. Please do NOT use yet.**
 
-| Chain | PreApproveRegistry |
-|---|---|
-| Goerli | [`0x00000000000649D9ec3d61D86c69a62580E6f096`](https://goerli.etherscan.io/address/0x00000000000649d9ec3d61d86c69a62580e6f096) | -->
+## Deployments
+
+> **As the codebase is still under heavy construction, these addresses may change.**
+
+| Chain | PreApproveRegistry | PreApproveListerFactory |
+|---|---|---|
+| Goerli | [`0x00000000000044dfA889ebC2C5103067Ec23332f`](https://goerli.etherscan.io/address/0x00000000000044dfA889ebC2C5103067Ec23332f) | [`0x000000008eD362F72783dEEf4B485761b4909e53`](https://goerli.etherscan.io/address/0x000000008eD362F72783dEEf4B485761b4909e53) |
 
 ## Contracts
 
