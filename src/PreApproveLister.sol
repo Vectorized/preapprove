@@ -21,11 +21,11 @@ contract PreApproveLister {
      * @dev Whether the contract is locked.
      *      When a contract is locked:
      *      - Operators cannot be added by the owner.
-     *      - Operators can be removed by the owner.
+     *      - Operators can still be removed by the owner.
      *      - Anyone can purge operators.
      *      - Contract cannot be unlocked.
      */
-    bool internal locked;
+    bool public locked;
 
     /**
      * @dev Whether the contract has already been initialized.
