@@ -1,15 +1,6 @@
 mkdir .tmp > /dev/null 2>&1;
 
 cp src/PreApproveLister.sol .tmp;
-cp lib/solady/src/auth/Ownable.sol .tmp;
-
-echo 'const fs = require("fs"), rfs = s => fs.readFileSync(s, { encoding: "utf8", flag: "r" });
-const p = ".tmp/PreApproveLister.sol";
-fs.writeFileSync(
-    p, 
-    rfs(p).replace(/import\s*?\"solady\/auth/, "import \".")
-)' > .tmp/replace_imports.js;
-node .tmp/replace_imports.js;
 
 echo '[profile.default]
 bytecode_hash="none"
@@ -34,10 +25,7 @@ fs.writeFileSync(
         "sources": {
             "PreApproveLister.sol": {
                 "content": rfs(".tmp/PreApproveLister.sol")
-            },
-            "Ownable.sol": {
-                "content": rfs(".tmp/Ownable.sol")
-            },
+            }
         },
         "settings": {
             "metadata": { "bytecodeHash": "none" },

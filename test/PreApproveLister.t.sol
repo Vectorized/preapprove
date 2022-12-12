@@ -53,4 +53,39 @@ contract PreApproveListerTest is PreApproveVanityTest {
             }
         }
     }
+
+    function testListerLock() public {
+        lister = new PreApproveLister();
+        lister.initialize(address(this));
+
+        TestVars memory v = _testVars(10);
+        unchecked {
+            for (uint256 j; j < 2; ++j) {
+                for (uint256 i; i != v.operators.length; ++i) {
+                    lister.addOperator(v.operators[i]);
+                }
+            }
+            assertEq(registry.totalOperators(address(lister)), v.operators.length);
+
+            vm.expectRevert("Not locked.");
+            vm.prank(address(1));
+            lister.purgeOperators(v.operators.length);
+
+            vm.prank(address(1));
+            vm.expectRevert("Unauthorized.");
+            lister.lock();
+
+            lister.lock();
+
+            vm.expectRevert("Locked.");
+            lister.addOperator(v.operators[0]);
+
+            vm.expectRevert("Locked.");
+            lister.lock();
+
+            vm.prank(address(1));
+            lister.purgeOperators(v.operators.length);
+            assertEq(registry.totalOperators(address(lister)), 0);
+        }
+    }
 }
