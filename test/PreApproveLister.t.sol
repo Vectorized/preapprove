@@ -65,10 +65,18 @@ contract PreApproveListerTest is PreApproveVanityTest {
     function testListerLock(uint256) public {
         TestVars memory v = _testVars(_bound(_random(), 3, 10));
 
-        address locker = address(uint160(_random()));
-        address notLocker = address(uint160(_random()));
+        address[] memory randomAccounts = _randomAccounts(10);
+        vm.assume(randomAccounts.length > 2);
+        address locker = randomAccounts[0];
+        address backupLocker = randomAccounts[1];
+        address notLocker = randomAccounts[2];
+
         PreApproveLister lister = _deployLister(locker);
-        vm.assume(locker != notLocker && locker != address(this));
+        vm.expectRevert("Backup cannot be zero.");
+        lister.setBackupLocker(address(0));
+        lister.setBackupLocker(backupLocker);
+        vm.expectRevert("Already set.");
+        lister.setBackupLocker(backupLocker);
 
         unchecked {
             for (uint256 i; i != v.operators.length; ++i) {
@@ -87,7 +95,9 @@ contract PreApproveListerTest is PreApproveVanityTest {
             vm.expectRevert("Unauthorized.");
             lister.lock();
 
-            vm.prank(_random() % 2 == 0 ? locker : address(this));
+            if (_random() % 2 == 0) {
+                vm.prank(_random() % 2 == 0 ? locker : backupLocker);
+            }
             lister.lock();
 
             vm.expectRevert("Locked.");
