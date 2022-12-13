@@ -72,6 +72,10 @@ contract PreApproveListerTest is PreApproveVanityTest {
         address notLocker = randomAccounts[2];
 
         PreApproveLister lister = _deployLister(locker);
+        vm.expectRevert("Backup cannot be zero.");
+        lister.setBackupLocker(address(0));
+        lister.setBackupLocker(backupLocker);
+        vm.expectRevert("Already set.");
         lister.setBackupLocker(backupLocker);
 
         unchecked {

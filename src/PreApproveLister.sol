@@ -28,6 +28,11 @@ contract PreApproveLister {
     bool public locked;
 
     /**
+     * @dev Whether the contract has already been initialized.
+     */
+    bool internal _initialized;
+
+    /**
      * @dev An account authorized to lock the contract, besides the contract owner.
      *      This is for the worse case scenario where the contract owner is a
      *      multisig and is compromised, with all the signers changed; we still
@@ -49,9 +54,9 @@ contract PreApproveLister {
      * @dev Initializer.
      */
     function initialize(address owner_, address locker_) external payable {
-        require(owner_ != address(0), "Owner cannot be zero.");
-        require(owner == address(0), "Already initialized.");
+        require(!_initialized);
         owner = owner_;
+        _initialized = true;
         locker = locker_;
     }
 
