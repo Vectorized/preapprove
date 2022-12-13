@@ -18,6 +18,14 @@ contract PreApproveLister {
     address public owner;
 
     /**
+     * @dev An account authorized to lock the contract, besides the contract owner.
+     *      This is for the worse case scenario where the contract owner is a
+     *      multisig and is compromised, with all the signers changed; we still
+     *      can use an EOA to lock the contract and purge all the operators.
+     */
+    address public locker;
+
+    /**
      * @dev Whether the contract is locked.
      *      When a contract is locked:
      *      - Operators cannot be added by the owner.
@@ -40,9 +48,10 @@ contract PreApproveLister {
     /**
      * @dev Initializer.
      */
-    function initialize(address listerOwner) external payable {
+    function initialize(address owner_, address locker_) external payable {
         require(!_initialized);
-        owner = listerOwner;
+        owner = owner_;
+        locker = locker_;
         _initialized = true;
     }
 
@@ -163,7 +172,7 @@ contract PreApproveLister {
      * @dev Locks the ability to add new operators.
      *      This function is to be used when the contract owner is compromised.
      */
-    function lock() external payable onlyOwner onlyUnlocked {
+    function lock() external payable onlyOwnerOrLocker onlyUnlocked {
         locked = true;
     }
 
@@ -172,6 +181,14 @@ contract PreApproveLister {
      */
     modifier onlyOwner() virtual {
         require(msg.sender == owner, "Unauthorized.");
+        _;
+    }
+
+    /**
+     * @dev Require the caller to be either the contract owner or locker.
+     */
+    modifier onlyOwnerOrLocker() virtual {
+        require(msg.sender == owner || msg.sender == locker, "Unauthorized.");
         _;
     }
 

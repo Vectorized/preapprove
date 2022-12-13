@@ -26,7 +26,7 @@ contract PreApproveListerTest is PreApproveVanityTest {
         address clone = LibClone.clone(address(implementation));
         vm.etch(example.PRE_APPROVE_LISTER(), clone.code);
         lister = PreApproveLister(example.PRE_APPROVE_LISTER());
-        lister.initialize(address(this));
+        lister.initialize(address(this), address(this));
     }
 
     function testTransfer(uint256) public {

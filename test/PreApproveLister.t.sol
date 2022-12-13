@@ -7,19 +7,27 @@ import {PreApproveListerFactory} from "../src/PreApproveListerFactory.sol";
 import "solady/utils/LibClone.sol";
 
 contract PreApproveListerTest is PreApproveVanityTest {
-    PreApproveLister public lister;
+    bool internal _testCreate2 = true;
 
-    function setUp() public override {
-        super.setUp();
-        lister = PreApproveLister(
-            (PreApproveListerFactory(PRE_APPROVE_LISTER_FACTORY_CREATE2_DEPLOYED_ADDRESS)).deploy(
-                address(this)
-            )
-        );
-        assertEq(lister.owner(), address(this));
+    function _deployLister() internal returns (PreApproveLister lister) {
+        lister = _deployLister(address(this));
+    }
+
+    function _deployLister(address locker) internal returns (PreApproveLister lister) {
+        if (_testCreate2 && _random() % 2 == 0) {
+            PreApproveListerFactory factory =
+                PreApproveListerFactory(PRE_APPROVE_LISTER_FACTORY_CREATE2_DEPLOYED_ADDRESS);
+            lister = PreApproveLister(factory.deploy(address(this), locker));
+            assertEq(lister.owner(), address(this));
+        } else {
+            lister = new PreApproveLister();
+            lister.initialize(address(this), locker);
+        }
     }
 
     function testCheckIsPreApprovedViaLister(uint256) public {
+        PreApproveLister lister = _deployLister();
+
         TestVars memory v = _testVars(1);
         v.lister = address(lister);
         assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
@@ -54,27 +62,32 @@ contract PreApproveListerTest is PreApproveVanityTest {
         }
     }
 
-    function testListerLock() public {
-        lister = new PreApproveLister();
-        lister.initialize(address(this));
+    function testListerLock(uint256) public {
+        TestVars memory v = _testVars(_bound(_random(), 3, 10));
 
-        TestVars memory v = _testVars(10);
+        address locker = address(uint160(_random()));
+        address notLocker = address(uint160(_random()));
+        PreApproveLister lister = _deployLister(locker);
+        vm.assume(locker != notLocker && locker != address(this));
+
         unchecked {
-            for (uint256 j; j < 2; ++j) {
-                for (uint256 i; i != v.operators.length; ++i) {
+            for (uint256 i; i != v.operators.length; ++i) {
+                lister.addOperator(v.operators[i]);
+                if (_random() % 2 == 0) {
                     lister.addOperator(v.operators[i]);
                 }
             }
+
             assertEq(registry.totalOperators(address(lister)), v.operators.length);
 
             vm.expectRevert("Not locked.");
-            vm.prank(address(1));
             lister.purgeOperators(v.operators.length);
 
-            vm.prank(address(1));
+            vm.prank(notLocker);
             vm.expectRevert("Unauthorized.");
             lister.lock();
 
+            vm.prank(_random() % 2 == 0 ? locker : address(this));
             lister.lock();
 
             vm.expectRevert("Locked.");
@@ -83,8 +96,12 @@ contract PreApproveListerTest is PreApproveVanityTest {
             vm.expectRevert("Locked.");
             lister.lock();
 
-            vm.prank(address(1));
-            lister.purgeOperators(v.operators.length);
+            uint256 n = _bound(_random(), 0, v.operators.length);
+            uint256 m = v.operators.length - n;
+            vm.prank(address(uint160(_random())));
+            lister.purgeOperators(n);
+            vm.prank(address(uint160(_random())));
+            lister.purgeOperators(m);
             assertEq(registry.totalOperators(address(lister)), 0);
         }
     }
