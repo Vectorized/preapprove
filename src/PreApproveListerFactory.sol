@@ -70,7 +70,7 @@ contract PreApproveListerFactory {
     }
 
     /**
-     * @dev Initializes the deployment
+     * @dev Initializes the deployment.
      * @param lister The lister contract.
      * @param owner  The initial owner of lister.
      * @param locker An address that can lock the lister, besides the owner.
