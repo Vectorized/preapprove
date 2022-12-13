@@ -18,6 +18,11 @@ contract PreApproveLister {
     address public owner;
 
     /**
+     * @dev Whether the contract has already been initialized.
+     */
+    bool internal _initialized;
+
+    /**
      * @dev Whether the contract is locked.
      *      When a contract is locked:
      *      - Operators cannot be added by the owner.
@@ -26,11 +31,6 @@ contract PreApproveLister {
      *      - Contract cannot be unlocked.
      */
     bool public locked;
-
-    /**
-     * @dev Whether the contract has already been initialized.
-     */
-    bool internal _initialized;
 
     /**
      * @dev An account authorized to lock the contract, besides the contract owner.
