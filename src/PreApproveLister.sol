@@ -18,7 +18,10 @@ contract PreApproveLister {
     address public owner;
 
     /**
-     * @dev An account authorized to lock the contract, besides the owner.
+     * @dev An account authorized to lock the contract, besides the contract owner.
+     *      This is for the worse case scenario where the contract owner is a
+     *      multisig and is compromised, with all the signers changed; we still
+     *      can use an EOA to lock the contract and purge all the operators.
      */
     address public locker;
 
