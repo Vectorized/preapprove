@@ -12,7 +12,7 @@ contract PreApproveListerFactory {
      * @dev The address of the pre-approve lister implementation.
      */
     address public constant PRE_APPROVE_LISTER_IMPLMENTATION =
-        0x0000000099de0862DF7150364a242795390Fc723;
+        0x000000007d8EBa4D7B043878338E1eBafaD149Da;
 
     /**
      * @dev Payable constructor for smaller deployment.
@@ -20,23 +20,25 @@ contract PreApproveListerFactory {
     constructor() payable {}
 
     /**
-     * @dev Deploys a lister, with `initialOwner` as the owner, and returns the address.
-     * @param initialOwner The initial owner of the lister.
+     * @dev Deploys a lister, with `owner` as the owner, and returns the address.
+     * @param owner  The initial owner of the lister.
+     * @param locker An address that can lock the lister, besides the owner.
      * @return lister The address of the deployed lister.
      */
-    function deploy(address initialOwner) external payable returns (address lister) {
+    function deploy(address owner, address locker) external payable returns (address lister) {
         lister = LibClone.clone(PRE_APPROVE_LISTER_IMPLMENTATION);
-        _initializeInitialOwner(lister, initialOwner);
+        _initializeDeployment(lister, owner, locker);
     }
 
     /**
      * @dev Deploys a lister deterministically with `salt`,
-     *      with `initialOwner` as the owner, and returns the address.
-     * @param initialOwner The initial owner of the lister.
-     * @param salt         The CREATE2 salt used to deploy to a deterministic address.
+     *      with `owner` as the owner, and returns the address.
+     * @param owner  The initial owner of the lister.
+     * @param locker An address that can lock the lister, besides the owner.
+     * @param salt   The CREATE2 salt used to deploy to a deterministic address.
      * @return lister The address of the deployed lister.
      */
-    function deployDeterministic(address initialOwner, bytes32 salt)
+    function deployDeterministic(address owner, address locker, bytes32 salt)
         external
         payable
         returns (address lister)
@@ -44,7 +46,7 @@ contract PreApproveListerFactory {
         // Require that the salt starts with either the zero address or the caller.
         LibClone.checkStartsWithCaller(salt);
         lister = LibClone.cloneDeterministic(PRE_APPROVE_LISTER_IMPLMENTATION, salt);
-        _initializeInitialOwner(lister, initialOwner);
+        _initializeDeployment(lister, owner, locker);
     }
 
     /**
@@ -68,24 +70,26 @@ contract PreApproveListerFactory {
     }
 
     /**
-     * @dev Initializes the initial owner of `lister` to `initialOwner`.
-     * @param lister       The lister contract.
-     * @param initialOwner The initial owner of lister.
+     * @dev Initializes the deployment
+     * @param lister The lister contract.
+     * @param owner  The initial owner of lister.
+     * @param locker An address that can lock the lister, besides the owner.
      */
-    function _initializeInitialOwner(address lister, address initialOwner) internal {
+    function _initializeDeployment(address lister, address owner, address locker) internal {
         /// @solidity memory-safe-assembly
         assembly {
             // Store the function selector:
-            // `bytes4(keccak256("initialize(address)"))`
-            mstore(returndatasize(), 0xc4d66de8)
-            mstore(0x20, initialOwner)
+            // `bytes4(keccak256("initialize(address,address)"))`
+            mstore(returndatasize(), shl(224, 0x485cc955))
+            mstore(0x04, owner)
+            mstore(0x24, locker)
             if iszero(
                 call(
                     gas(), // Remaining gas.
                     lister, // Address of the newly created lister.
                     returndatasize(), // Send 0 ETH.
-                    0x1c, // Start of calldata.
-                    0x24, // Length of calldata.
+                    returndatasize(), // Start of calldata.
+                    0x44, // Length of calldata.
                     returndatasize(), // Start of returndata in memory.
                     returndatasize() // Length of returndata.
                 )
@@ -93,6 +97,9 @@ contract PreApproveListerFactory {
                 // This is to prevent gas under-estimation.
                 revert(0, 0)
             }
+            // Restore the part of the free memory pointer that
+            // was overwritten with 0.
+            mstore(0x24, 0)
         }
     }
 }
