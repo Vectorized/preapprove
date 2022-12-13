@@ -18,14 +18,6 @@ contract PreApproveLister {
     address public owner;
 
     /**
-     * @dev An account authorized to lock the contract, besides the contract owner.
-     *      This is for the worse case scenario where the contract owner is a
-     *      multisig and is compromised, with all the signers changed; we still
-     *      can use an EOA to lock the contract and purge all the operators.
-     */
-    address public locker;
-
-    /**
      * @dev Whether the contract is locked.
      *      When a contract is locked:
      *      - Operators cannot be added by the owner.
@@ -36,9 +28,17 @@ contract PreApproveLister {
     bool public locked;
 
     /**
-     * @dev Whether the contract has already been initialized.
+     * @dev An account authorized to lock the contract, besides the contract owner.
+     *      This is for the worse case scenario where the contract owner is a
+     *      multisig and is compromised, with all the signers changed; we still
+     *      can use an EOA to lock the contract and purge all the operators.
      */
-    bool internal _initialized;
+    address public locker;
+
+    /**
+     * @dev A backup locker in case locker's private key is lost.
+     */
+    address public backupLocker;
 
     /**
      * @dev Payable constructor for smaller deployment.
@@ -49,10 +49,10 @@ contract PreApproveLister {
      * @dev Initializer.
      */
     function initialize(address owner_, address locker_) external payable {
-        require(!_initialized);
+        require(owner_ != address(0), "Owner cannot be zero.");
+        require(owner == address(0), "Already initialized.");
         owner = owner_;
         locker = locker_;
-        _initialized = true;
     }
 
     /**
@@ -169,6 +169,16 @@ contract PreApproveLister {
     }
 
     /**
+     * @dev Allows the contract owner to set a backup locker address.
+     * @param backup The backup locker address.
+     */
+    function setBackupLocker(address backup) external payable onlyOwner {
+        require(backup != address(0), "Backup cannot be zero.");
+        require(backupLocker == address(0), "Already set.");
+        backupLocker = backup;
+    }
+
+    /**
      * @dev Locks the ability to add new operators.
      *      This function is to be used when the contract owner is compromised.
      */
@@ -188,7 +198,10 @@ contract PreApproveLister {
      * @dev Require the caller to be either the contract owner or locker.
      */
     modifier onlyOwnerOrLocker() virtual {
-        require(msg.sender == owner || msg.sender == locker, "Unauthorized.");
+        require(
+            msg.sender == owner || msg.sender == locker || msg.sender == backupLocker,
+            "Unauthorized."
+        );
         _;
     }
 
