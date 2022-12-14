@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import "./PreApproveRegistry.t.sol";
-import "solady/utils/LibString.sol";
 
 interface IImmutableCreate2Factory {
     function safeCreate2(bytes32 salt, bytes calldata initializationCode)
