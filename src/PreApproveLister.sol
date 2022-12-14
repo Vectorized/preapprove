@@ -7,10 +7,18 @@ pragma solidity ^0.8.4;
  *         to the registry.
  */
 contract PreApproveLister {
+    // =============================================================
+    //                           CONSTANTS
+    // =============================================================
+
     /**
      * @dev The address of the pre-approve registry.
      */
     address public constant PRE_APPROVE_REGISTRY = 0x00000000000044dfA889ebC2C5103067Ec23332f;
+
+    // =============================================================
+    //                            STORAGE
+    // =============================================================
 
     /**
      * @dev The owner of the contract.
@@ -45,9 +53,10 @@ contract PreApproveLister {
      */
     address public backupLocker;
 
-    /**
-     * @dev Payable constructor for smaller deployment.
-     */
+    // =============================================================
+    //                   CONSTRUCTOR / INITIALIZER
+    // =============================================================
+
     constructor() payable {}
 
     /**
@@ -59,6 +68,10 @@ contract PreApproveLister {
         _initialized = true;
         locker = locker_;
     }
+
+    // =============================================================
+    //               PUBLIC / EXTERNAL WRITE FUNCTIONS
+    // =============================================================
 
     /**
      * @dev Adds the `operator` to the pre-approve list maintained by the caller (lister).
@@ -190,6 +203,10 @@ contract PreApproveLister {
     function lock() external payable onlyOwnerOrLocker onlyUnlocked {
         locked = true;
     }
+
+    // =============================================================
+    //                  INTERNAL / PRIVATE HELPERS
+    // =============================================================
 
     /**
      * @dev Require the caller to be the contract owner.
