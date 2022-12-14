@@ -63,42 +63,33 @@ contract PreApproveVanityTest is PreApproveRegistryTest {
     function setUp() public virtual override {
         vm.etch(IMMUTABLE_CREATE2_FACTORY_ADDRESS, bytes(IMMUTABLE_CREATE2_FACTORY_BYTECODE));
 
-        registry = PreApproveRegistry(
-            IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY_ADDRESS).safeCreate2(
-                PRE_APPROVE_REGISTRY_CREATE2_SALT, bytes(PRE_APPROVE_REGISTRY_INITCODE)
-            )
-        );
+        IImmutableCreate2Factory c2f = IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY_ADDRESS);
 
-        assertEq(
-            address(
-                IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY_ADDRESS).safeCreate2(
-                    PRE_APPROVE_LISTER_IMPLEMENTATION_CREATE2_SALT,
-                    bytes(PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODE)
-                )
-            ),
-            PRE_APPROVE_LISTER_IMPLEMENTATION_CREATE2_DEPLOYED_ADDRESS
-        );
+        bytes32 salt = PRE_APPROVE_REGISTRY_CREATE2_SALT;
+        bytes memory initcode = PRE_APPROVE_REGISTRY_INITCODE;
+        address expectedDeployment = PRE_APPROVE_REGISTRY_CREATE2_DEPLOYED_ADDRESS;
+        registry = PreApproveRegistry(c2f.safeCreate2(salt, initcode));
+        assertEq(address(registry), expectedDeployment);
 
-        assertEq(
-            address(
-                IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY_ADDRESS).safeCreate2(
-                    PRE_APPROVE_LISTER_FACTORY_CREATE2_SALT,
-                    bytes(PRE_APPROVE_LISTER_FACTORY_INITCODE)
-                )
-            ),
-            PRE_APPROVE_LISTER_FACTORY_CREATE2_DEPLOYED_ADDRESS
-        );
+        salt = PRE_APPROVE_LISTER_IMPLEMENTATION_CREATE2_SALT;
+        initcode = PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODE;
+        expectedDeployment = PRE_APPROVE_LISTER_IMPLEMENTATION_CREATE2_DEPLOYED_ADDRESS;
+        assertEq(c2f.safeCreate2(salt, initcode), expectedDeployment);
+
+        salt = PRE_APPROVE_LISTER_FACTORY_CREATE2_SALT;
+        initcode = PRE_APPROVE_LISTER_FACTORY_INITCODE;
+        expectedDeployment = PRE_APPROVE_LISTER_FACTORY_CREATE2_DEPLOYED_ADDRESS;
+        assertEq(c2f.safeCreate2(salt, initcode), expectedDeployment);
     }
 
     function testInitcodehashes() public {
-        assertEq(keccak256(bytes(PRE_APPROVE_REGISTRY_INITCODE)), PRE_APPROVE_REGISTRY_INITCODEHASH);
-        assertEq(
-            keccak256(bytes(PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODE)),
-            PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODEHASH
-        );
-        assertEq(
-            keccak256(bytes(PRE_APPROVE_LISTER_FACTORY_INITCODE)),
-            PRE_APPROVE_LISTER_FACTORY_INITCODEHASH
-        );
+        bytes32 computedHash = keccak256(PRE_APPROVE_REGISTRY_INITCODE);
+        assertEq(computedHash, PRE_APPROVE_REGISTRY_INITCODEHASH);
+
+        computedHash = keccak256(PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODE);
+        assertEq(computedHash, PRE_APPROVE_LISTER_IMPLEMENTATION_INITCODEHASH);
+
+        computedHash = keccak256(PRE_APPROVE_LISTER_FACTORY_INITCODE);
+        assertEq(computedHash, PRE_APPROVE_LISTER_FACTORY_INITCODEHASH);
     }
 }

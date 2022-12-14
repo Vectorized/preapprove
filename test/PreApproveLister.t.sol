@@ -23,6 +23,11 @@ contract PreApproveListerTest is PreApproveVanityTest {
             lister = new PreApproveLister();
             lister.initialize(address(this), locker);
         }
+        // Check repeat initialization reverts.
+        if (_random() % 8 == 0) {
+            vm.expectRevert();
+            lister.initialize(address(this), locker);
+        }
     }
 
     function testCheckIsPreApprovedViaLister(uint256) public {
@@ -63,7 +68,7 @@ contract PreApproveListerTest is PreApproveVanityTest {
     }
 
     function testListerLock(uint256) public {
-        TestVars memory v = _testVars(_bound(_random(), 3, 10));
+        TestVars memory v = _testVars(_bound(_random(), 2, 10));
 
         address[] memory randomAccounts = _randomAccounts(10);
         vm.assume(randomAccounts.length > 2);
@@ -72,6 +77,8 @@ contract PreApproveListerTest is PreApproveVanityTest {
         address notLocker = randomAccounts[2];
 
         PreApproveLister lister = _deployLister(locker);
+
+        // Check set backup locker.
         vm.expectRevert("Backup cannot be zero.");
         lister.setBackupLocker(address(0));
         lister.setBackupLocker(backupLocker);
@@ -81,37 +88,61 @@ contract PreApproveListerTest is PreApproveVanityTest {
         unchecked {
             for (uint256 i; i != v.operators.length; ++i) {
                 lister.addOperator(v.operators[i]);
+                // Check add operator twice does not revert.
                 if (_random() % 2 == 0) {
                     lister.addOperator(v.operators[i]);
                 }
             }
-
+            // Check all operators added.
             assertEq(registry.totalOperators(address(lister)), v.operators.length);
 
+            // Check if can remove operator before locked.
+            if (_random() % 2 == 0) {
+                lister.removeOperator(v.operators[_random() % v.operators.length]);
+            }
+
+            // Check cannot purge operators before locked.
             vm.expectRevert("Not locked.");
             lister.purgeOperators(v.operators.length);
 
+            // Check permissions to lock.
             vm.prank(notLocker);
             vm.expectRevert("Unauthorized.");
             lister.lock();
 
+            // Check either locker or the backup locker or the owner can lock.
             if (_random() % 2 == 0) {
                 vm.prank(_random() % 2 == 0 ? locker : backupLocker);
             }
             lister.lock();
 
+            // Check cannot add operator after locked.
             vm.expectRevert("Locked.");
             lister.addOperator(v.operators[0]);
 
+            // Check cannot lock twice.
             vm.expectRevert("Locked.");
             lister.lock();
 
-            uint256 n = _bound(_random(), 0, v.operators.length);
-            uint256 m = v.operators.length - n;
+            // Check if can remove operator after locked.
+            if (_random() % 2 == 0) {
+                lister.removeOperator(v.operators[_random() % v.operators.length]);
+            }
+
+            uint256 n = registry.totalOperators(address(lister));
+            uint256 p0 = _bound(_random(), 0, n);
+            uint256 p1 = n - p0;
+            // Check purge more than number of operators revert.
+            if (_random() % 8 == 0) {
+                vm.prank(address(uint160(_random())));
+                vm.expectRevert();
+                lister.purgeOperators(n + 1);
+            }
+            // Check purge operators.
             vm.prank(address(uint160(_random())));
-            lister.purgeOperators(n);
+            lister.purgeOperators(p0);
             vm.prank(address(uint160(_random())));
-            lister.purgeOperators(m);
+            lister.purgeOperators(p1);
             assertEq(registry.totalOperators(address(lister)), 0);
         }
     }
