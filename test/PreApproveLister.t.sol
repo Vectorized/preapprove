@@ -35,6 +35,7 @@ contract PreApproveListerTest is PreApproveVanityTest {
 
         TestVars memory v = _testVars(1);
         v.lister = address(lister);
+        // Check initial.
         assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
         vm.prank(v.collector);
@@ -42,24 +43,30 @@ contract PreApproveListerTest is PreApproveVanityTest {
 
         for (uint256 t; t != 2; ++t) {
             lister.addOperator(v.operator);
+            // Check before timelock period.
             assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
             uint256 begins = registry.startTime(v.lister, v.operator);
+            // Check before timelock period.
             vm.warp(begins - 1);
             assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), false);
 
+            // Check after timelock period.
             vm.warp(begins);
             assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), true);
 
+            // Check after timelock period.
             vm.warp(begins + _random() % 256);
             assertEq(registry.isPreApproved(v.operator, v.collector, v.lister), true);
 
+            // Just for gas profiling.
             uint256 gasBefore = gasleft();
             registry.isPreApproved(v.operator, v.collector, v.lister);
             console.log(gasBefore - gasleft());
 
             vm.warp(block.timestamp + _random() % 8);
 
+            // Check remove operator instantly takes effect.
             if (_random() % 2 == 0) {
                 lister.removeOperator(v.operator);
                 assertEq(registry.startTime(v.lister, v.operator), 0);
