@@ -8,16 +8,25 @@ import "solady/utils/LibClone.sol";
  * @notice A factory that allows one to deploy listers.
  */
 contract PreApproveListerFactory {
+    // =============================================================
+    //                           CONSTANTS
+    // =============================================================
+
     /**
      * @dev The address of the pre-approve lister implementation.
      */
     address public constant PRE_APPROVE_LISTER_IMPLMENTATION =
         0x00000000e458A7E6058b3500fc4dF8a3E963e429;
 
-    /**
-     * @dev Payable constructor for smaller deployment.
-     */
+    // =============================================================
+    //                          CONSTRUCTOR
+    // =============================================================
+
     constructor() payable {}
+
+    // =============================================================
+    //               PUBLIC / EXTERNAL WRITE FUNCTIONS
+    // =============================================================
 
     /**
      * @dev Deploys a lister, with `owner` as the owner, and returns the address.
@@ -49,6 +58,10 @@ contract PreApproveListerFactory {
         _initializeDeployment(lister, owner, locker);
     }
 
+    // =============================================================
+    //               PUBLIC / EXTERNAL VIEW FUNCTIONS
+    // =============================================================
+
     /**
      * @dev Returns the deterministic address which the lister will be deployed at with `salt`.
      * @param salt The CREATE2 salt.
@@ -68,6 +81,10 @@ contract PreApproveListerFactory {
     function initCodeHash() external pure returns (bytes32 hash) {
         hash = LibClone.initCodeHash(PRE_APPROVE_LISTER_IMPLMENTATION);
     }
+
+    // =============================================================
+    //                  INTERNAL / PRIVATE HELPERS
+    // =============================================================
 
     /**
      * @dev Initializes the deployment.
