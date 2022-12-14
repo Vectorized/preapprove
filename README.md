@@ -14,7 +14,7 @@ Useful for pre-approving contracts in your dApp ecosystem to manage NFTs without
 
 | Chain | PreApproveRegistry | PreApproveListerFactory |
 |---|---|---|
-| Goerli | [`0x00000000000044dfA889ebC2C5103067Ec23332f`](https://goerli.etherscan.io/address/0x00000000000044dfA889ebC2C5103067Ec23332f) | [`0x00000000233fCEF6BE5B1fE25A896a312537E552`](https://goerli.etherscan.io/address/0x00000000233fCEF6BE5B1fE25A896a312537E552) |
+| Goerli | [`0x000000000000B89C3cBDBBecb313Bd896b09144d`](https://goerli.etherscan.io/address/0x000000000000B89C3cBDBBecb313Bd896b09144d) | [`0x000000002f8c58a122F28C7CC8d644227a8FBa06`](https://goerli.etherscan.io/address/0x000000002f8c58a122F28C7CC8d644227a8FBa06) |
 
 ## Contracts
 
