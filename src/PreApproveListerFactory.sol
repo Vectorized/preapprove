@@ -16,7 +16,7 @@ contract PreApproveListerFactory {
      * @dev The address of the pre-approve lister implementation.
      */
     address public constant PRE_APPROVE_LISTER_IMPLMENTATION =
-        0x00000000e458A7E6058b3500fc4dF8a3E963e429;
+        0x00000000f233003741E28F08125FBba9F6F5Db2d;
 
     // =============================================================
     //                          CONSTRUCTOR
