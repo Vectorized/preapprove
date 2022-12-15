@@ -1,5 +1,9 @@
 # PreApprove
 
+[![NPM][npm-shield]][npm-url]
+[![CI][ci-shield]][ci-url]
+[![MIT License][license-shield]][license-url]
+
 On-chain registry for pre-approvals of ERC721 transfers.
 
 Useful for pre-approving contracts in your dApp ecosystem to manage NFTs without individual approvals.
@@ -79,3 +83,13 @@ This repository is inspired by and directly modified from:
 
 - [Seaport](https://github.com/ProjectOpenSea/seaport)
 - [ClosedSea](https://github.com/vectorized/closedsea)
+
+
+[npm-shield]: https://img.shields.io/npm/v/preapprove.svg
+[npm-url]: https://www.npmjs.com/package/preapprove
+
+[ci-shield]: https://img.shields.io/github/workflow/status/vectorized/preapprove/ci?label=build
+[ci-url]: https://github.com/vectorized/preapprove/actions/workflows/ci.yml
+
+[license-shield]: https://img.shields.io/badge/License-MIT-green.svg
+[license-url]: https://github.com/vectorized/preapprove/blob/main/LICENSE.txt
