@@ -1,5 +1,7 @@
 mkdir .tmp > /dev/null 2>&1;
 
+forge fmt;
+
 cp src/PreApproveRegistry.sol .tmp;
 cp src/utils/EnumerableAddressSetMap.sol .tmp;
 
@@ -11,9 +13,7 @@ fs.writeFileSync(
 )' > .tmp/replace_imports.js;
 node .tmp/replace_imports.js;
 
-echo '[profile.default]
-bytecode_hash="none"
-' > .tmp/foundry.toml;
+rm .tmp/foundry.toml > /dev/null 2>&1;
 
 forge build --out="out" --root=".tmp" --contracts="." --via-ir --optimize --optimizer-runs=1000000 --use=0.8.17;
 
@@ -40,7 +40,6 @@ fs.writeFileSync(
             },
         },
         "settings": {
-            "metadata": { "bytecodeHash": "none" },
             "optimizer": { "enabled": true, "runs": 1000000 },
             "viaIR": true,
             "outputSelection": { "*": { "*": [ "evm.bytecode", "evm.deployedBytecode", "abi" ] } }
