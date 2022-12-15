@@ -6,15 +6,21 @@ Useful for pre-approving contracts in your dApp ecosystem to manage NFTs without
 
 > **Warning**
 >
-> **This codebase is still under heavy construction. Please do NOT use yet.**
+> **This codebase going through finalization. Please do NOT use yet.**
 
 ## Deployments
 
-> **As the codebase is still under heavy construction, these addresses may change.**
+> **As the codebase is still going through finalization, these addresses may change.**
 
 | Chain | PreApproveRegistry | PreApproveListerFactory |
 |---|---|---|
+| Ethereum | [`0x000000000000B89C3cBDBBecb313Bd896b09144d`](https://etherscan.io/address/0x000000000000B89C3cBDBBecb313Bd896b09144d) | [`0x000000002f8c58a122F28C7CC8d644227a8FBa06`](https://etherscan.io/address/0x000000002f8c58a122F28C7CC8d644227a8FBa06) |
 | Goerli | [`0x000000000000B89C3cBDBBecb313Bd896b09144d`](https://goerli.etherscan.io/address/0x000000000000B89C3cBDBBecb313Bd896b09144d) | [`0x000000002f8c58a122F28C7CC8d644227a8FBa06`](https://goerli.etherscan.io/address/0x000000002f8c58a122F28C7CC8d644227a8FBa06) |
+| Polygon | [`0x000000000000B89C3cBDBBecb313Bd896b09144d`](https://polygonscan.com/address/0x000000000000B89C3cBDBBecb313Bd896b09144d) | [`0x000000002f8c58a122F28C7CC8d644227a8FBa06`](https://polygonscan.com/address/0x000000002f8c58a122F28C7CC8d644227a8FBa06) |
+| Mumbai | [`0x000000000000B89C3cBDBBecb313Bd896b09144d`](https://mumbai.polygonscan.com/address/0x000000000000B89C3cBDBBecb313Bd896b09144d) | [`0x000000002f8c58a122F28C7CC8d644227a8FBa06`](https://mumbai.polygonscan.com/address/0x000000002f8c58a122F28C7CC8d644227a8FBa06) |
+
+
+Please open an issue if you need help to deploy to a EVM chain of your choice.
 
 ## Contracts
 
