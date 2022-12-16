@@ -70,8 +70,9 @@ src
 - Collectors can subscribe and unsubscribe to the lister which is queried by NFT contracts. Subscription is opt-in.
 - A lister can add operators, but takes 7 days to take effect. 
 - A lister can remove operators immediately anytime, even if the operator is not yet in effect.
-- The list of operators managed by a lister can only be modified through the lister, and no one else.
-- A lister can be an EOA or a smart contract. We highly recommend using our factory to create a lister contract with the following security benefits:
+- The list of operators managed by a lister can only be modified by the lister.
+- A lister can be an EOA or a smart contract.   
+  We highly recommend using our pre-approve lister factory to create a lister contract with the following security benefits:
     - Ability for a separate locker address to lock the lister anytime, in case the lister's owner is compromised.
     - Once locked:
       - No more operators can be added.
