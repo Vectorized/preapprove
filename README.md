@@ -88,7 +88,7 @@ This repository is inspired by and directly modified from:
 [npm-shield]: https://img.shields.io/npm/v/preapprove.svg
 [npm-url]: https://www.npmjs.com/package/preapprove
 
-[ci-shield]: https://img.shields.io/actions/github/workflow/status/vectorized/preapprove/ci.yml?label=build&branch=main
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/vectorized/preapprove/ci.yml?label=build&branch=main
 [ci-url]: https://github.com/vectorized/preapprove/actions/workflows/ci.yml
 
 [license-shield]: https://img.shields.io/badge/License-MIT-green.svg
