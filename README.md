@@ -82,16 +82,17 @@ src
     - Ability for a separate locker address to lock the lister anytime, in case the lister's owner is compromised.
 
     - Once locked:
-      - No more operators can be added by the owner.
+      - No more operators can be added by the lister's owner.
       - The list of operators can be emptied immediately by any account (flight back to default safety).
 
-    - We highly recommend using a multisig for the lister's owner, and an EOA for the locker.   
+    - We highly recommend using a multisig for the lister's owner, and an EOA for the lister's locker.   
       This is because a multisig's signers may be changed immediately if it is compromised.   
-      The locker EOA should not be part of the owner multisig.
+      The locker EOA should not be part of the lister's owner multisig.
 
-    - A backup locker is configurable by the owner in case the locker cannot be accessed (e.g. private key lost). 
+    - A backup locker is configurable by the lister's owner in case the locker cannot be accessed (e.g. private key lost).   
+      We recommend setting it up as soon as the lister contract is deployed, if possible.
 
-    - The owner, the locker, and the backup locker, cannot be changed once initialized.
+    - The lister's owner, locker, backup locker, cannot be changed once initialized.
 
 ## Safety
 
