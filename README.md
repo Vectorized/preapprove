@@ -67,7 +67,10 @@ src
 
 ## Security
 
-- Collectors can subscribe and unsubscribe to the lister which is queried by NFT contracts. Subscription is opt-in.
+- Collectors can subscribe and unsubscribe to the listers. Subscription is opt-in.  
+
+  - The NFT contract developer has to specify which lister on the registry is queried by the NFT contract.  
+    We recommend that the lister address is hardcoded as a constant in the NFT contract's code, for security (if the lister is created via our factory) and gas efficiency.
 
 - A lister can add operators, but takes 7 days to take effect. 
 
