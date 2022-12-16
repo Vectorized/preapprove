@@ -40,6 +40,23 @@ src
 |---|---|
 | ERC721A | [`src/example/ExampleERC721A.sol`](./src/example/ExampleERC721A.sol) |
 
+
+## Installation
+
+You can use the [`src/PreApproveChecker.sol`](./src/PreApproveChecker.sol) library in your NFT contracts to query the registry efficiently.
+
+To install with [**Foundry**](https://github.com/gakonst/foundry):
+
+```sh
+forge install vectorized/preapprove
+```
+
+To install with [**Hardhat**](https://github.com/nomiclabs/hardhat) or [**Truffle**](https://github.com/trufflesuite/truffle):
+
+```sh
+npm install preapprove
+```
+
 ## Glossary
 
 - Collectors
@@ -67,7 +84,7 @@ src
 
 ## Security
 
-- Collectors can subscribe and unsubscribe to the listers. Subscription is opt-in.  
+- Collectors can subscribe and unsubscribe to listers. Subscription is opt-in.  
 
   - The NFT contract developer has to specify which lister on the registry is queried by the NFT contract.  
     We recommend that the lister address is hardcoded as a constant in the NFT contract's code, for security (if the lister is created via our factory) and gas efficiency.
