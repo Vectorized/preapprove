@@ -68,17 +68,29 @@ src
 ## Security
 
 - Collectors can subscribe and unsubscribe to the lister which is queried by NFT contracts. Subscription is opt-in.
+
 - A lister can add operators, but takes 7 days to take effect. 
+
 - A lister can remove operators immediately anytime, even if the operator is not yet in effect.
+
 - The list of operators managed by a lister can only be modified by the lister.
+
 - A lister can be an EOA or a smart contract.   
-  We highly recommend using our pre-approve lister factory to create a lister contract with the following security benefits:
+
+  We highly recommend using our pre-approve lister factory to create a lister contract with the following security benefits:  
+
     - Ability for a separate locker address to lock the lister anytime, in case the lister's owner is compromised.
+
     - Once locked:
-      - No more operators can be added.
-      - The list of operators can be emptied by any account immediately.
-    - We highly recommend using a multisig for the lister's owner, and an EOA for the locker. The locker EOA should NOT be in the owner multisig.
+      - No more operators can be added by the owner.
+      - The list of operators can be emptied immediately by any account (flight back to default safety).
+
+    - We highly recommend using a multisig for the lister's owner, and an EOA for the locker.   
+      This is because a multisig's signers may be changed immediately if it is compromised.   
+      The locker EOA should not be part of the owner multisig.
+
     - A backup locker is configurable by the owner in case the locker cannot be accessed (e.g. private key lost). 
+
     - The owner, the locker, and the backup locker, cannot be changed once initialized.
 
 ## Safety
