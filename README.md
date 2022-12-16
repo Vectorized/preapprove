@@ -8,13 +8,7 @@ On-chain registry for pre-approvals of ERC721 transfers.
 
 Useful for pre-approving contracts in your dApp ecosystem to manage NFTs without individual approvals.
 
-> **Warning**
->
-> **This codebase is still going through finalization. Please do NOT use yet.**
-
 ## Deployments
-
-> **As the codebase is still going through finalization, these addresses may change.**
 
 | Chain | PreApproveRegistry | PreApproveListerFactory |
 |---|---|---|
